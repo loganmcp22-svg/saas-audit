@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SaaS Spend Audit</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: #f4f6fb;
+      color: #1a1a2e;
+      min-height: 100vh;
+      padding: 48px 20px;
+    }
+
+    .container {
+      max-width: 760px;
+      margin: 0 auto;
+    }
+
+    header {
+      text-align: center;
+      margin-bottom: 36px;
+    }
+
+    header .badge {
+      display: inline-block;
+      background: #ede9fe;
+      color: #5b21b6;
+      font-size: 0.75rem;
+      font-weight: 600;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      padding: 4px 12px;
+      border-radius: 20px;
+      margin-bottom: 14px;
+    }
+
+    header h1 {
+      font-size: 2rem;
+      font-weight: 800;
+      color: #1a1a2e;
+      margin-bottom: 10px;
+      letter-spacing: -0.03em;
+    }
+
+    header p {
+      color: #6b7280;
+      font-size: 1rem;
+      max-width: 420px;
+      margin: 0 auto;
+      line-height: 1.6;
+    }
+
+    .card {
+      background: white;
+      border-radius: 16px;
+      padding: 32px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.06), 0 4px 16px rgba(0,0,0,0.06);
+    }
+
+    .table-head {
+      display: grid;
+      grid-template-columns: 1fr 170px 150px 40px;
+      gap: 12px;
+      padding: 0 0 12px;
+      border-bottom: 1.5px solid #f0f0f7;
+      margin-bottom: 8px;
+    }
+
+    .table-head span {
+      font-size: 0.72rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.07em;
+      color: #9ca3af;
+    }
+
+    .row {
+      display: grid;
+      grid-template-columns: 1fr 170px 150px 40px;
+      gap: 12px;
+      align-items: center;
+      margin-bottom: 10px;
+      animation: fadeIn 0.15s ease;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(-4px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    input[type="text"],
+    input[type="number"],
+    select {
+      width: 100%;
+      padding: 10px 13px;
+      border: 1.5px solid #e5e7eb;
+      border-radius: 8px;
+      font-size: 0.93rem;
+      color: #111827;
+      background: #fafafa;
+      transition: border-color 0.15s, box-shadow 0.15s, background 0.15s;
+      outline: none;
+      appearance: none;
+      -webkit-appearance: none;
+    }
+
+    input[type="text"]:focus,
+    input[type="number"]:focus,
+    select:focus {
+      border-color: #6366f1;
+      box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.12);
+      background: white;
+    }
+
+    .cost-wrap {
+      position: relative;
+    }
+
+    .cost-wrap span {
+      position: absolute;
+      left: 12px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: #9ca3af;
+      font-size: 0.93rem;
+      pointer-events: none;
+    }
+
+    .cost-wrap input {
+      padding-left: 24px;
+    }
+
+    select {
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%239ca3af' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 12px center;
+      padding-right: 32px;
+      cursor: pointer;
+    }
+
+    .remove-btn {
+      width: 36px;
+      height: 36px;
+      border: none;
+      background: #fef2f2;
+      color: #ef4444;
+      border-radius: 8px;
+      font-size: 1.1rem;
+      line-height: 1;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: background 0.15s;
+      flex-shrink: 0;
+    }
+
+    .remove-btn:hover { background: #fee2e2; }
+
+    .actions {
+      display: flex;
+      gap: 12px;
+      margin-top: 20px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+
+    .btn-add {
+      padding: 10px 18px;
+      border: 1.5px dashed #a5b4fc;
+      background: transparent;
+      color: #6366f1;
+      border-radius: 8px;
+      font-size: 0.9rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.15s, border-color 0.15s;
+    }
+
+    .btn-add:hover {
+      background: #eef2ff;
+      border-color: #6366f1;
+    }
+
+    .btn-submit {
+      margin-left: auto;
+      padding: 11px 26px;
+      background: #4f46e5;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      font-size: 0.95rem;
+      font-weight: 700;
+      cursor: pointer;
+      letter-spacing: -0.01em;
+      transition: background 0.15s, transform 0.1s;
+    }
+
+    .btn-submit:hover  { background: #4338ca; }
+    .btn-submit:active { transform: scale(0.98); }
+
+    .hint {
+      text-align: center;
+      margin-top: 20px;
+      color: #9ca3af;
+      font-size: 0.82rem;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <div class="badge">Free Audit Tool</div>
+      <h1>SaaS Spend Audit</h1>
+      <p>Enter your software subscriptions to instantly see how much you're paying for tools you no longer use.</p>
+    </header>
+
+    <div class="card">
+      <form method="POST" action="/" id="audit-form">
+        <div class="table-head">
+          <span>Service Name</span>
+          <span>Monthly Cost</span>
+          <span>Still Using?</span>
+          <span></span>
+        </div>
+
+        <div id="rows"></div>
+
+        <div class="actions">
+          <button type="button" class="btn-add" id="add-btn">+ Add Row</button>
+          <button type="submit" class="btn-submit">Calculate Waste &rarr;</button>
+        </div>
+      </form>
+    </div>
+
+    <p class="hint">Your data stays in your browser session and is never stored or shared.</p>
+  </div>
+
+  <script>
+    const container = document.getElementById('rows');
+
+    function createRow(name, cost, using) {
+      const n = name  || '';
+      const c = cost  || '';
+      const u = using || 'yes';
+      const row = document.createElement('div');
+      row.className = 'row';
+      row.innerHTML =
+        '<input type="text" name="name" placeholder="e.g. Slack, Figma, Zoom" value="' + escAttr(n) + '" autocomplete="off">' +
+        '<div class="cost-wrap"><span>$</span>' +
+        '<input type="number" name="cost" min="0" step="0.01" placeholder="0.00" value="' + escAttr(c) + '"></div>' +
+        '<select name="using">' +
+          '<option value="yes"' + (u === 'yes' ? ' selected' : '') + '>Yes, using it</option>' +
+          '<option value="no"'  + (u === 'no'  ? ' selected' : '') + '>No, not using</option>' +
+        '</select>' +
+        '<button type="button" class="remove-btn" title="Remove row">&times;</button>';
+      row.querySelector('.remove-btn').addEventListener('click', function () {
+        if (container.querySelectorAll('.row').length > 1) row.remove();
+      });
+      return row;
+    }
+
+    function escAttr(s) {
+      return String(s).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;');
+    }
+
+    document.getElementById('add-btn').addEventListener('click', function () {
+      const row = createRow();
+      container.appendChild(row);
+      row.querySelector('input[name="name"]').focus();
+    });
+
+    // Seed with 4 starter rows
+    const starters = [
+      ['Slack',  '12.50', 'yes'],
+      ['Zoom',   '15.99', 'yes'],
+      ['Notion', '16.00', 'yes'],
+      ['',       '',      'yes'],
+    ];
+    starters.forEach(function (s) { container.appendChild(createRow(s[0], s[1], s[2])); });
+  </script>
+</body>
+</html>

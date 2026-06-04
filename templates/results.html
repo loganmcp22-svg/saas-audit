@@ -1,0 +1,360 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Audit Results — SaaS Spend</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: #f4f6fb;
+      color: #1a1a2e;
+      min-height: 100vh;
+      padding: 48px 20px;
+    }
+
+    .container {
+      max-width: 760px;
+      margin: 0 auto;
+    }
+
+    header {
+      text-align: center;
+      margin-bottom: 36px;
+    }
+
+    header h1 {
+      font-size: 2rem;
+      font-weight: 800;
+      letter-spacing: -0.03em;
+      margin-bottom: 8px;
+    }
+
+    header p {
+      color: #6b7280;
+      font-size: 0.95rem;
+    }
+
+    /* ── Insight banner ── */
+    .insight {
+      border-radius: 12px;
+      padding: 18px 22px;
+      margin-bottom: 28px;
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      font-size: 0.97rem;
+      font-weight: 500;
+      line-height: 1.5;
+    }
+
+    .insight.waste {
+      background: #fef2f2;
+      border: 1.5px solid #fecaca;
+      color: #991b1b;
+    }
+
+    .insight.clean {
+      background: #f0fdf4;
+      border: 1.5px solid #bbf7d0;
+      color: #166534;
+    }
+
+    .insight-icon {
+      font-size: 1.6rem;
+      flex-shrink: 0;
+    }
+
+    .insight strong { font-weight: 700; }
+
+    /* ── Stat cards ── */
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 16px;
+      margin-bottom: 28px;
+    }
+
+    @media (max-width: 540px) {
+      .stats { grid-template-columns: 1fr; }
+    }
+
+    .stat {
+      background: white;
+      border-radius: 14px;
+      padding: 22px 20px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.06), 0 4px 12px rgba(0,0,0,0.05);
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .stat-label {
+      font-size: 0.75rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.07em;
+      color: #9ca3af;
+    }
+
+    .stat-value {
+      font-size: 1.9rem;
+      font-weight: 800;
+      letter-spacing: -0.04em;
+      line-height: 1.1;
+      margin: 4px 0;
+    }
+
+    .stat-sub {
+      font-size: 0.78rem;
+      color: #9ca3af;
+      font-weight: 500;
+    }
+
+    .stat.total  .stat-value { color: #1a1a2e; }
+    .stat.active .stat-value { color: #16a34a; }
+    .stat.waste  .stat-value { color: #dc2626; }
+    .stat.waste  { border: 2px solid #fecaca; }
+
+    /* ── Waste bar ── */
+    .bar-section {
+      background: white;
+      border-radius: 14px;
+      padding: 20px 24px;
+      margin-bottom: 28px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.06), 0 4px 12px rgba(0,0,0,0.05);
+    }
+
+    .bar-labels {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.82rem;
+      font-weight: 600;
+      color: #6b7280;
+      margin-bottom: 10px;
+    }
+
+    .bar-labels .pct { color: #dc2626; }
+
+    .bar-track {
+      background: #e5e7eb;
+      border-radius: 99px;
+      height: 14px;
+      overflow: hidden;
+    }
+
+    .bar-fill {
+      height: 100%;
+      border-radius: 99px;
+      background: linear-gradient(90deg, #ef4444, #dc2626);
+      transition: width 0.8s cubic-bezier(.4,0,.2,1);
+      min-width: {{ '2px' if waste_pct > 0 else '0' }};
+    }
+
+    /* ── Table ── */
+    .card {
+      background: white;
+      border-radius: 14px;
+      padding: 0;
+      overflow: hidden;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.06), 0 4px 12px rgba(0,0,0,0.05);
+      margin-bottom: 28px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.9rem;
+    }
+
+    thead th {
+      padding: 14px 20px;
+      text-align: left;
+      font-size: 0.72rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.07em;
+      color: #9ca3af;
+      background: #fafafa;
+      border-bottom: 1.5px solid #f0f0f7;
+    }
+
+    tbody tr {
+      border-bottom: 1px solid #f3f4f6;
+      transition: background 0.1s;
+    }
+
+    tbody tr:last-child { border-bottom: none; }
+    tbody tr:hover { background: #fafafa; }
+
+    tbody tr.waste-row { background: #fff9f9; }
+    tbody tr.waste-row:hover { background: #fff0f0; }
+
+    td {
+      padding: 14px 20px;
+      vertical-align: middle;
+    }
+
+    td.name-cell { font-weight: 600; color: #111827; }
+    td.cost-cell { font-variant-numeric: tabular-nums; color: #374151; }
+    td.cost-cell.waste-cost { color: #dc2626; font-weight: 700; }
+
+    tfoot td {
+      padding: 14px 20px;
+      font-weight: 700;
+      font-size: 0.93rem;
+      background: #f9fafb;
+      border-top: 2px solid #e5e7eb;
+      color: #111827;
+    }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      padding: 4px 10px;
+      border-radius: 20px;
+      font-size: 0.75rem;
+      font-weight: 700;
+      letter-spacing: 0.02em;
+    }
+
+    .badge-active {
+      background: #dcfce7;
+      color: #15803d;
+    }
+
+    .badge-waste {
+      background: #fef2f2;
+      color: #dc2626;
+    }
+
+    /* ── Footer ── */
+    .footer {
+      display: flex;
+      justify-content: center;
+    }
+
+    .btn-back {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 12px 28px;
+      background: white;
+      color: #4f46e5;
+      border: 2px solid #e0e7ff;
+      border-radius: 10px;
+      font-size: 0.93rem;
+      font-weight: 700;
+      text-decoration: none;
+      transition: background 0.15s, border-color 0.15s;
+    }
+
+    .btn-back:hover {
+      background: #eef2ff;
+      border-color: #a5b4fc;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+
+    <header>
+      <h1>Your Audit Results</h1>
+      <p>Here's where your SaaS budget is going — and where it's being wasted.</p>
+    </header>
+
+    {% if waste > 0 %}
+    <div class="insight waste">
+      <span class="insight-icon">&#9888;&#65039;</span>
+      <span>
+        You could save <strong>${{ "%.2f"|format(waste) }}/month (${{ "%.0f"|format(waste * 12) }}/year)</strong>
+        by canceling {{ wasted_count }} unused subscription{{ 's' if wasted_count != 1 else '' }}.
+      </span>
+    </div>
+    {% else %}
+    <div class="insight clean">
+      <span class="insight-icon">&#10003;</span>
+      <span><strong>No waste detected!</strong> Every subscription you listed is actively in use.</span>
+    </div>
+    {% endif %}
+
+    <!-- Stat cards -->
+    <div class="stats">
+      <div class="stat total">
+        <div class="stat-label">Total Monthly Spend</div>
+        <div class="stat-value">${{ "%.2f"|format(total) }}</div>
+        <div class="stat-sub">${{ "%.0f"|format(total * 12) }} per year</div>
+      </div>
+      <div class="stat active">
+        <div class="stat-label">Active &amp; Used</div>
+        <div class="stat-value">${{ "%.2f"|format(active) }}</div>
+        <div class="stat-sub">{{ subscriptions|selectattr('using')|list|length }} subscription{{ 's' if subscriptions|selectattr('using')|list|length != 1 else '' }}</div>
+      </div>
+      <div class="stat waste">
+        <div class="stat-label">Monthly Waste</div>
+        <div class="stat-value">${{ "%.2f"|format(waste) }}</div>
+        <div class="stat-sub">${{ "%.0f"|format(waste * 12) }} wasted per year</div>
+      </div>
+    </div>
+
+    <!-- Waste bar -->
+    {% if total > 0 %}
+    <div class="bar-section">
+      <div class="bar-labels">
+        <span>Budget allocation</span>
+        <span class="pct">{{ "%.0f"|format(waste_pct) }}% wasted</span>
+      </div>
+      <div class="bar-track">
+        <div class="bar-fill" style="width: {{ waste_pct }}%"></div>
+      </div>
+    </div>
+    {% endif %}
+
+    <!-- Subscription table -->
+    <div class="card">
+      <table>
+        <thead>
+          <tr>
+            <th>Service</th>
+            <th>Monthly Cost</th>
+            <th>Annual Cost</th>
+            <th>Status</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for sub in subscriptions %}
+          <tr class="{{ '' if sub.using else 'waste-row' }}">
+            <td class="name-cell">{{ sub.name }}</td>
+            <td class="cost-cell {{ '' if sub.using else 'waste-cost' }}">${{ "%.2f"|format(sub.cost) }}</td>
+            <td class="cost-cell {{ '' if sub.using else 'waste-cost' }}">${{ "%.0f"|format(sub.cost * 12) }}</td>
+            <td>
+              {% if sub.using %}
+              <span class="badge badge-active">&#10003; Active</span>
+              {% else %}
+              <span class="badge badge-waste">&#10005; Not Used</span>
+              {% endif %}
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+        <tfoot>
+          <tr>
+            <td>Total</td>
+            <td>${{ "%.2f"|format(total) }}</td>
+            <td>${{ "%.0f"|format(total * 12) }}</td>
+            <td></td>
+          </tr>
+        </tfoot>
+      </table>
+    </div>
+
+    <div class="footer">
+      <a href="/" class="btn-back">&larr; Start New Audit</a>
+    </div>
+
+  </div>
+</body>
+</html>
