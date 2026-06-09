@@ -171,7 +171,11 @@
       margin-bottom: 28px;
     }
 
-    @media (max-width: 540px) {
+    @media (max-width: 620px) {
+      .stats { grid-template-columns: repeat(2, 1fr); }
+    }
+
+    @media (max-width: 400px) {
       .stats { grid-template-columns: 1fr; }
     }
 
@@ -351,6 +355,40 @@
     }
 
     .btn-back:hover { background: var(--navy-2); }
+
+    /* ── Mobile ── */
+    @media (max-width: 420px) {
+      .navbar { padding: 0 16px; }
+    }
+
+    @media (max-width: 560px) {
+      .page { padding: 28px 12px 44px; }
+
+      header { margin-bottom: 24px; }
+      header h1 { font-size: 1.6rem; }
+
+      /* Tighten insight banner so long text wraps cleanly */
+      .insight {
+        padding: 14px 16px;
+        gap: 10px;
+        font-size: 0.9rem;
+        align-items: flex-start;
+      }
+
+      /* Drop Annual Cost column — too cramped on small screens */
+      thead th:nth-child(3),
+      tbody td:nth-child(3),
+      tfoot td:nth-child(3) { display: none; }
+
+      thead th, td, tfoot td { padding: 11px 14px; }
+
+      /* Full-width back button — easier to tap */
+      .btn-back {
+        width: 100%;
+        justify-content: center;
+        padding: 14px 20px;
+      }
+    }
   </style>
 </head>
 <body>

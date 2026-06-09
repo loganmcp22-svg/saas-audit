@@ -139,8 +139,26 @@
       margin: 0 auto 36px;
     }
 
+    @media (max-width: 420px) {
+      .navbar { padding: 0 16px; }
+      .nav-pill { display: none; }
+    }
+
     @media (max-width: 580px) {
       .pricing-grid { grid-template-columns: 1fr; }
+
+      .page { padding: 32px 12px 52px; }
+
+      header { margin-bottom: 32px; }
+      header h1 { font-size: 1.75rem; }
+
+      /* Reduce card padding so content has more breathing room */
+      .tier { padding: 24px 20px; }
+
+      /* Larger tap target on CTA */
+      .btn-cta { padding: 15px 20px; }
+
+      .pricing-note { padding: 0 4px; }
     }
 
     /* ── Tier cards ── */
