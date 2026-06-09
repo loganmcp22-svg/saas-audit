@@ -55,5 +55,10 @@ def results():
     )
 
 
+@app.route('/pricing')
+def pricing():
+    return render_template('pricing.html')
+
+
 if __name__ == '__main__':
     app.run(debug=True)

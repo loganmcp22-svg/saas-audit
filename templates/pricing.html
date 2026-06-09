@@ -1,0 +1,455 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Pricing — SubAudit</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --navy:        #0f172a;
+      --navy-2:      #1e293b;
+      --green:       #10b981;
+      --green-dark:  #059669;
+      --green-light: #ecfdf5;
+      --green-border:#a7f3d0;
+      --page-bg:     #f8fafc;
+      --card-bg:     #ffffff;
+      --border:      #e2e8f0;
+      --text:        #0f172a;
+      --muted:       #64748b;
+      --subtle:      #94a3b8;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: var(--page-bg);
+      color: var(--text);
+      min-height: 100vh;
+    }
+
+    /* ── Navbar ── */
+    .navbar {
+      background: var(--navy);
+      padding: 0 28px;
+      height: 60px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      box-shadow: 0 1px 0 rgba(255,255,255,0.05);
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      text-decoration: none;
+    }
+
+    .brand-icon {
+      width: 32px;
+      height: 32px;
+      flex-shrink: 0;
+    }
+
+    .brand-name {
+      font-size: 1.18rem;
+      font-weight: 800;
+      color: #ffffff;
+      letter-spacing: -0.03em;
+    }
+
+    .brand-name .accent { color: var(--green); }
+
+    .nav-right {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .nav-link {
+      color: rgba(255,255,255,0.6);
+      font-size: 0.875rem;
+      font-weight: 500;
+      text-decoration: none;
+      padding: 6px 12px;
+      border-radius: 6px;
+      transition: color 0.15s, background 0.15s;
+    }
+
+    .nav-link:hover {
+      color: #ffffff;
+      background: rgba(255,255,255,0.08);
+    }
+
+    .nav-link.active {
+      color: #ffffff;
+      background: rgba(255,255,255,0.1);
+    }
+
+    .nav-pill {
+      background: rgba(16, 185, 129, 0.12);
+      color: var(--green);
+      border: 1px solid rgba(16, 185, 129, 0.28);
+      font-size: 0.7rem;
+      font-weight: 700;
+      letter-spacing: 0.07em;
+      text-transform: uppercase;
+      padding: 4px 10px;
+      border-radius: 20px;
+    }
+
+    /* ── Page body ── */
+    .page {
+      padding: 56px 20px 72px;
+    }
+
+    .container {
+      max-width: 780px;
+      margin: 0 auto;
+    }
+
+    /* ── Page header ── */
+    header {
+      text-align: center;
+      margin-bottom: 48px;
+    }
+
+    header h1 {
+      font-size: 2.1rem;
+      font-weight: 800;
+      color: var(--navy);
+      letter-spacing: -0.04em;
+      margin-bottom: 12px;
+    }
+
+    header p {
+      color: var(--muted);
+      font-size: 1rem;
+      line-height: 1.6;
+    }
+
+    /* ── Pricing grid ── */
+    .pricing-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 24px;
+      max-width: 700px;
+      margin: 0 auto 36px;
+    }
+
+    @media (max-width: 580px) {
+      .pricing-grid { grid-template-columns: 1fr; }
+    }
+
+    /* ── Tier cards ── */
+    .tier {
+      background: var(--card-bg);
+      border-radius: 16px;
+      padding: 32px;
+      border: 2px solid var(--border);
+      box-shadow: 0 1px 4px rgba(0,0,0,0.05), 0 8px 28px rgba(15,23,42,0.07);
+      display: flex;
+      flex-direction: column;
+    }
+
+    .tier.free {
+      border-top: 3px solid var(--green);
+    }
+
+    .tier.pro {
+      background: #f8fafc;
+      border: 2px solid #e2e8f0;
+      border-top: 3px solid #e2e8f0;
+    }
+
+    /* ── Tier badge ── */
+    .tier-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      font-size: 0.7rem;
+      font-weight: 700;
+      letter-spacing: 0.07em;
+      text-transform: uppercase;
+      padding: 4px 10px;
+      border-radius: 20px;
+      align-self: flex-start;
+      margin-bottom: 20px;
+    }
+
+    .tier-badge.available {
+      background: var(--green-light);
+      color: var(--green-dark);
+      border: 1px solid var(--green-border);
+    }
+
+    .tier-badge.soon {
+      background: #f1f5f9;
+      color: #64748b;
+      border: 1px solid #e2e8f0;
+    }
+
+    .tier-badge svg {
+      width: 10px;
+      height: 10px;
+      flex-shrink: 0;
+    }
+
+    /* ── Tier name & price ── */
+    .tier-name {
+      font-size: 1.1rem;
+      font-weight: 700;
+      color: var(--navy);
+      margin-bottom: 10px;
+    }
+
+    .tier.pro .tier-name { color: #94a3b8; }
+
+    .tier-price {
+      display: flex;
+      align-items: baseline;
+      gap: 4px;
+      margin-bottom: 4px;
+    }
+
+    .price-amount {
+      font-size: 2.6rem;
+      font-weight: 800;
+      letter-spacing: -0.05em;
+      color: var(--navy);
+      line-height: 1;
+    }
+
+    .tier.pro .price-amount { color: #94a3b8; }
+
+    .price-period {
+      font-size: 0.9rem;
+      font-weight: 500;
+      color: var(--muted);
+    }
+
+    .tier.pro .price-period { color: #cbd5e1; }
+
+    .tier-sub {
+      font-size: 0.82rem;
+      color: var(--subtle);
+      margin-bottom: 24px;
+    }
+
+    .tier.pro .tier-sub { color: #cbd5e1; }
+
+    /* ── Divider ── */
+    .tier-divider {
+      border: none;
+      border-top: 1.5px solid #f1f5f9;
+      margin-bottom: 20px;
+    }
+
+    .tier.pro .tier-divider { border-color: #e9eef4; }
+
+    /* ── Feature list ── */
+    .features {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 11px;
+      margin-bottom: 28px;
+      flex: 1;
+    }
+
+    .features li {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      font-size: 0.9rem;
+      color: #374151;
+      line-height: 1.45;
+    }
+
+    .tier.pro .features li { color: #94a3b8; }
+
+    .check {
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      background: var(--green-light);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      margin-top: 1px;
+    }
+
+    .check svg {
+      width: 10px;
+      height: 10px;
+      color: var(--green-dark);
+    }
+
+    .tier.pro .check {
+      background: #f1f5f9;
+    }
+
+    .tier.pro .check svg {
+      color: #cbd5e1;
+    }
+
+    /* ── CTA buttons ── */
+    .btn-cta {
+      display: block;
+      width: 100%;
+      padding: 13px 20px;
+      border-radius: 9px;
+      font-size: 0.95rem;
+      font-weight: 700;
+      text-align: center;
+      text-decoration: none;
+      cursor: pointer;
+      border: none;
+      transition: background 0.15s, transform 0.1s;
+    }
+
+    .btn-cta:active { transform: scale(0.98); }
+
+    .btn-free {
+      background: var(--navy);
+      color: #ffffff;
+    }
+
+    .btn-free:hover { background: var(--navy-2); }
+
+    .btn-waitlist {
+      background: #e9eef4;
+      color: #94a3b8;
+      cursor: default;
+    }
+
+    /* ── Footer note ── */
+    .pricing-note {
+      text-align: center;
+      color: var(--subtle);
+      font-size: 0.82rem;
+      max-width: 400px;
+      margin: 0 auto;
+      line-height: 1.6;
+    }
+  </style>
+</head>
+<body>
+
+  <nav class="navbar">
+    <a href="/" class="brand">
+      <svg class="brand-icon" viewBox="0 0 36 36" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+        <rect width="36" height="36" rx="8" fill="#1e293b"/>
+        <rect x="8" y="10" width="13" height="2.2" rx="1.1" fill="#10b981"/>
+        <rect x="8" y="15" width="9" height="2.2" rx="1.1" fill="#10b981" fill-opacity="0.65"/>
+        <rect x="8" y="20" width="11" height="2.2" rx="1.1" fill="#10b981" fill-opacity="0.4"/>
+        <circle cx="24.5" cy="24.5" r="4.5" stroke="#10b981" stroke-width="2" fill="none"/>
+        <line x1="27.7" y1="27.7" x2="30.5" y2="30.5" stroke="#10b981" stroke-width="2" stroke-linecap="round"/>
+      </svg>
+      <span class="brand-name">Sub<span class="accent">Audit</span></span>
+    </a>
+    <div class="nav-right">
+      <a href="/pricing" class="nav-link active">Pricing</a>
+      <div class="nav-pill">Free Tool</div>
+    </div>
+  </nav>
+
+  <div class="page">
+    <div class="container">
+
+      <header>
+        <h1>Simple, Transparent Pricing</h1>
+        <p>Start for free. Pro features are on the way.</p>
+      </header>
+
+      <div class="pricing-grid">
+
+        <!-- Free tier -->
+        <div class="tier free">
+          <span class="tier-badge available">
+            <svg viewBox="0 0 10 10" fill="none" aria-hidden="true">
+              <path d="M1.5 5l2.5 2.5 4.5-4.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+            Available Now
+          </span>
+          <div class="tier-name">Free</div>
+          <div class="tier-price">
+            <span class="price-amount">$0</span>
+            <span class="price-period">/ month</span>
+          </div>
+          <div class="tier-sub">No credit card required</div>
+          <hr class="tier-divider">
+          <ul class="features">
+            <li>
+              <span class="check"><svg viewBox="0 0 10 10" fill="none" aria-hidden="true"><path d="M1.5 5l2.5 2.5 4.5-4.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+              Manual subscription entry
+            </li>
+            <li>
+              <span class="check"><svg viewBox="0 0 10 10" fill="none" aria-hidden="true"><path d="M1.5 5l2.5 2.5 4.5-4.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+              Instant waste calculation
+            </li>
+            <li>
+              <span class="check"><svg viewBox="0 0 10 10" fill="none" aria-hidden="true"><path d="M1.5 5l2.5 2.5 4.5-4.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+              Monthly &amp; annual cost breakdown
+            </li>
+            <li>
+              <span class="check"><svg viewBox="0 0 10 10" fill="none" aria-hidden="true"><path d="M1.5 5l2.5 2.5 4.5-4.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+              Waste percentage visualization
+            </li>
+          </ul>
+          <a href="/" class="btn-cta btn-free">Start Free Audit &rarr;</a>
+        </div>
+
+        <!-- Pro tier (coming soon) -->
+        <div class="tier pro">
+          <span class="tier-badge soon">
+            <svg viewBox="0 0 10 10" fill="none" aria-hidden="true">
+              <circle cx="5" cy="5" r="4" stroke="currentColor" stroke-width="1.4"/>
+              <path d="M5 3v2.5l1.5 1" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/>
+            </svg>
+            Coming Soon
+          </span>
+          <div class="tier-name">Pro</div>
+          <div class="tier-price">
+            <span class="price-amount">$9</span>
+            <span class="price-period">/ month</span>
+          </div>
+          <div class="tier-sub">Billed monthly, cancel anytime</div>
+          <hr class="tier-divider">
+          <ul class="features">
+            <li>
+              <span class="check"><svg viewBox="0 0 10 10" fill="none" aria-hidden="true"><path d="M1.5 5l2.5 2.5 4.5-4.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+              Everything in Free
+            </li>
+            <li>
+              <span class="check"><svg viewBox="0 0 10 10" fill="none" aria-hidden="true"><path d="M1.5 5l2.5 2.5 4.5-4.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+              Automatic subscription detection via Gmail
+            </li>
+            <li>
+              <span class="check"><svg viewBox="0 0 10 10" fill="none" aria-hidden="true"><path d="M1.5 5l2.5 2.5 4.5-4.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+              Unlimited saved audits
+            </li>
+            <li>
+              <span class="check"><svg viewBox="0 0 10 10" fill="none" aria-hidden="true"><path d="M1.5 5l2.5 2.5 4.5-4.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+              Export results to CSV
+            </li>
+            <li>
+              <span class="check"><svg viewBox="0 0 10 10" fill="none" aria-hidden="true"><path d="M1.5 5l2.5 2.5 4.5-4.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+              Priority support
+            </li>
+          </ul>
+          <button type="button" class="btn-cta btn-waitlist">Join Waitlist</button>
+        </div>
+
+      </div>
+
+      <p class="pricing-note">Pro features are in active development. Join the waitlist to be notified at launch.</p>
+
+    </div>
+  </div>
+
+</body>
+</html>
