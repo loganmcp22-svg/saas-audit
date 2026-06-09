@@ -369,10 +369,15 @@
       .table-head { display: none; }
 
       /* Reflow each row: name full-width on row 1,
-         cost + select + ×-btn on row 2 */
+         cost + select + ×-btn on row 2.
+         Use named areas to avoid auto-placement ambiguity. */
       .row {
         grid-template-columns: 1fr 1fr 44px;
-        row-gap: 8px;
+        grid-template-rows: auto auto;
+        grid-template-areas:
+          "name name name"
+          "cost sel  rm";
+        gap: 8px 10px;
         margin-bottom: 0;
         padding: 12px 0;
         border-bottom: 1px solid #f1f5f9;
@@ -380,8 +385,10 @@
 
       .row:last-child { border-bottom: none; padding-bottom: 0; }
 
-      /* First child (name input) spans all columns */
-      .row > *:first-child { grid-column: 1 / -1; }
+      .row > input[type="text"] { grid-area: name; }
+      .row > .cost-wrap         { grid-area: cost; }
+      .row > select             { grid-area: sel; }
+      .row > .remove-btn        { grid-area: rm; }
 
       /* Prevent iOS auto-zoom on inputs */
       input[type="text"],
