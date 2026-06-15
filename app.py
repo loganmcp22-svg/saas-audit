@@ -72,7 +72,9 @@ def waitlist():
     api_key = os.environ.get('MAILCHIMP_API_KEY', '')
     audience_id = os.environ.get('MAILCHIMP_AUDIENCE_ID', '')
     if not api_key or not audience_id:
-        return jsonify({'error': 'Waitlist is not configured yet.'}), 500
+        with open('waitlist.txt', 'a') as f:
+            f.write(email + '\n')
+        return jsonify({'ok': True})
 
     dc = api_key.split('-')[-1]
     url = f'https://{dc}.api.mailchimp.com/3.0/lists/{audience_id}/members'
