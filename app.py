@@ -1,7 +1,9 @@
-from flask import Flask, render_template, request, session, redirect, url_for
+import os
+import requests
+from flask import Flask, render_template, request, session, redirect, url_for, jsonify
 
 app = Flask(__name__)
-app.secret_key = 'saas-audit-dev-key-change-in-prod'
+app.secret_key = os.environ.get('SECRET_KEY', 'saas-audit-dev-key-change-in-prod')
 
 
 @app.route('/', methods=['GET', 'POST'])
@@ -58,6 +60,39 @@ def results():
 @app.route('/pricing')
 def pricing():
     return render_template('pricing.html')
+
+
+@app.route('/api/waitlist', methods=['POST'])
+def waitlist():
+    data = request.get_json()
+    email = (data or {}).get('email', '').strip()
+    if not email:
+        return jsonify({'error': 'Email is required.'}), 400
+
+    api_key = os.environ.get('MAILCHIMP_API_KEY', '')
+    audience_id = os.environ.get('MAILCHIMP_AUDIENCE_ID', '')
+    if not api_key or not audience_id:
+        return jsonify({'error': 'Waitlist is not configured yet.'}), 500
+
+    dc = api_key.split('-')[-1]
+    url = f'https://{dc}.api.mailchimp.com/3.0/lists/{audience_id}/members'
+    try:
+        resp = requests.post(
+            url,
+            auth=('anystring', api_key),
+            json={'email_address': email, 'status': 'subscribed'},
+            timeout=10,
+        )
+    except requests.RequestException:
+        return jsonify({'error': 'Could not reach Mailchimp. Please try again.'}), 502
+
+    if resp.status_code in (200, 201):
+        return jsonify({'ok': True})
+    body = resp.json()
+    # 400 with title "Member Exists" means already subscribed — treat as success
+    if resp.status_code == 400 and body.get('title') == 'Member Exists':
+        return jsonify({'ok': True})
+    return jsonify({'error': body.get('detail', 'Something went wrong. Please try again.')}), 400
 
 
 if __name__ == '__main__':

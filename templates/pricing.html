@@ -339,9 +339,116 @@
     .btn-free:hover { background: var(--navy-2); }
 
     .btn-waitlist {
-      background: #e9eef4;
-      color: #94a3b8;
-      cursor: default;
+      background: var(--navy);
+      color: #ffffff;
+      cursor: pointer;
+    }
+
+    .btn-waitlist:hover { background: var(--navy-2); }
+
+    /* ── Waitlist modal ── */
+    .modal-backdrop {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(15,23,42,0.55);
+      z-index: 100;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+
+    .modal-backdrop.open { display: flex; }
+
+    .modal {
+      background: #fff;
+      border-radius: 16px;
+      padding: 36px 32px 32px;
+      width: 100%;
+      max-width: 400px;
+      box-shadow: 0 20px 60px rgba(15,23,42,0.18);
+      position: relative;
+    }
+
+    .modal-close {
+      position: absolute;
+      top: 14px;
+      right: 16px;
+      background: none;
+      border: none;
+      cursor: pointer;
+      color: var(--subtle);
+      font-size: 1.4rem;
+      line-height: 1;
+      padding: 4px 8px;
+    }
+
+    .modal-close:hover { color: var(--text); }
+
+    .modal h2 {
+      font-size: 1.25rem;
+      font-weight: 800;
+      color: var(--navy);
+      letter-spacing: -0.03em;
+      margin-bottom: 6px;
+    }
+
+    .modal p {
+      font-size: 0.88rem;
+      color: var(--muted);
+      margin-bottom: 22px;
+      line-height: 1.5;
+    }
+
+    .modal-input {
+      width: 100%;
+      padding: 11px 14px;
+      border: 1.5px solid var(--border);
+      border-radius: 8px;
+      font-size: 0.95rem;
+      color: var(--text);
+      outline: none;
+      transition: border-color 0.15s;
+      margin-bottom: 12px;
+    }
+
+    .modal-input:focus { border-color: var(--green); }
+
+    .modal-submit {
+      width: 100%;
+      padding: 13px;
+      background: var(--navy);
+      color: #fff;
+      border: none;
+      border-radius: 9px;
+      font-size: 0.95rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: background 0.15s;
+    }
+
+    .modal-submit:hover { background: var(--navy-2); }
+    .modal-submit:disabled { opacity: 0.6; cursor: default; }
+
+    .modal-msg {
+      margin-top: 14px;
+      font-size: 0.875rem;
+      text-align: center;
+      border-radius: 8px;
+      padding: 10px 14px;
+      display: none;
+    }
+
+    .modal-msg.success {
+      background: var(--green-light);
+      color: var(--green-dark);
+      border: 1px solid var(--green-border);
+    }
+
+    .modal-msg.error {
+      background: #fef2f2;
+      color: #b91c1c;
+      border: 1px solid #fecaca;
     }
 
     /* ── Footer note ── */
@@ -459,7 +566,7 @@
               Priority support
             </li>
           </ul>
-          <button type="button" class="btn-cta btn-waitlist">Join Waitlist</button>
+          <button type="button" class="btn-cta btn-waitlist" id="openModal">Join Waitlist</button>
         </div>
 
       </div>
@@ -468,6 +575,104 @@
 
     </div>
   </div>
+
+
+  <!-- Waitlist modal -->
+  <div class="modal-backdrop" id="modalBackdrop" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+    <div class="modal">
+      <button class="modal-close" id="closeModal" aria-label="Close">&times;</button>
+      <h2 id="modalTitle">Join the Pro Waitlist</h2>
+      <p>Be the first to know when Pro launches. We'll send one email — no spam.</p>
+      <form id="waitlistForm" novalidate>
+        <input
+          class="modal-input"
+          type="email"
+          id="waitlistEmail"
+          name="email"
+          placeholder="you@example.com"
+          required
+          autocomplete="email"
+        >
+        <button type="submit" class="modal-submit" id="waitlistSubmit">Notify Me</button>
+      </form>
+      <div class="modal-msg" id="modalMsg"></div>
+    </div>
+  </div>
+
+  <script>
+    const backdrop = document.getElementById('modalBackdrop');
+    const form     = document.getElementById('waitlistForm');
+    const emailEl  = document.getElementById('waitlistEmail');
+    const submitBtn= document.getElementById('waitlistSubmit');
+    const msgEl    = document.getElementById('modalMsg');
+
+    function openModal() {
+      backdrop.classList.add('open');
+      emailEl.value = '';
+      hideMsg();
+      submitBtn.disabled = false;
+      setTimeout(() => emailEl.focus(), 50);
+    }
+
+    function closeModal() {
+      backdrop.classList.remove('open');
+    }
+
+    function showMsg(text, type) {
+      msgEl.textContent = text;
+      msgEl.className = 'modal-msg ' + type;
+      msgEl.style.display = 'block';
+    }
+
+    function hideMsg() {
+      msgEl.style.display = 'none';
+      msgEl.className = 'modal-msg';
+    }
+
+    document.getElementById('openModal').addEventListener('click', openModal);
+    document.getElementById('closeModal').addEventListener('click', closeModal);
+
+    backdrop.addEventListener('click', function(e) {
+      if (e.target === backdrop) closeModal();
+    });
+
+    document.addEventListener('keydown', function(e) {
+      if (e.key === 'Escape') closeModal();
+    });
+
+    form.addEventListener('submit', async function(e) {
+      e.preventDefault();
+      const email = emailEl.value.trim();
+      if (!email) {
+        showMsg('Please enter your email address.', 'error');
+        return;
+      }
+      submitBtn.disabled = true;
+      submitBtn.textContent = 'Submitting…';
+      hideMsg();
+
+      try {
+        const res = await fetch('/api/waitlist', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email }),
+        });
+        const data = await res.json();
+        if (data.ok) {
+          form.style.display = 'none';
+          showMsg("You're on the list! We'll notify you at launch.", 'success');
+        } else {
+          showMsg(data.error || 'Something went wrong. Please try again.', 'error');
+          submitBtn.disabled = false;
+          submitBtn.textContent = 'Notify Me';
+        }
+      } catch {
+        showMsg('Network error. Please try again.', 'error');
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Notify Me';
+      }
+    });
+  </script>
 
 </body>
 </html>
