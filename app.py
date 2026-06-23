@@ -1,7 +1,9 @@
 import os
 import requests
 from flask import Flask, render_template, request, session, redirect, url_for, jsonify
-from extensions import db
+from flask_login import login_user, logout_user, login_required, current_user
+from werkzeug.security import generate_password_hash, check_password_hash
+from extensions import db, login_manager
 
 app = Flask(__name__)
 app.secret_key = os.environ.get('SECRET_KEY', 'saas-audit-dev-key-change-in-prod')
@@ -14,6 +16,7 @@ app.config['SQLALCHEMY_DATABASE_URI'] = database_url or 'sqlite:///local.db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 db.init_app(app)
+login_manager.init_app(app)
 
 import models  # noqa: E402 — registers models with SQLAlchemy metadata
 
@@ -21,7 +24,13 @@ with app.app_context():
     db.create_all()
 
 
+@login_manager.user_loader
+def load_user(user_id):
+    return models.User.query.get(int(user_id))
+
+
 @app.route('/', methods=['GET', 'POST'])
+@login_required
 def index():
     if request.method == 'POST':
         names = request.form.getlist('name')
@@ -50,6 +59,7 @@ def index():
 
 
 @app.route('/results')
+@login_required
 def results():
     subscriptions = session.get('subscriptions', [])
     if not subscriptions:
@@ -75,6 +85,51 @@ def results():
 @app.route('/pricing')
 def pricing():
     return render_template('pricing.html')
+
+
+@app.route('/signup', methods=['GET', 'POST'])
+def signup():
+    if current_user.is_authenticated:
+        return redirect(url_for('index'))
+    error = None
+    if request.method == 'POST':
+        email = request.form.get('email', '').strip().lower()
+        password = request.form.get('password', '')
+        if not email or not password:
+            error = 'Email and password are required.'
+        elif models.User.query.filter_by(email=email).first():
+            error = 'An account with that email already exists.'
+        else:
+            user = models.User(email=email, password_hash=generate_password_hash(password))
+            db.session.add(user)
+            db.session.commit()
+            login_user(user)
+            return redirect(url_for('index'))
+    return render_template('signup.html', error=error)
+
+
+@app.route('/login', methods=['GET', 'POST'])
+def login():
+    if current_user.is_authenticated:
+        return redirect(url_for('index'))
+    error = None
+    if request.method == 'POST':
+        email = request.form.get('email', '').strip().lower()
+        password = request.form.get('password', '')
+        user = models.User.query.filter_by(email=email).first()
+        if not user or not check_password_hash(user.password_hash, password):
+            error = 'Invalid email or password.'
+        else:
+            login_user(user)
+            return redirect(url_for('index'))
+    return render_template('login.html', error=error)
+
+
+@app.route('/logout')
+@login_required
+def logout():
+    logout_user()
+    return redirect(url_for('login'))
 
 
 @app.route('/api/waitlist', methods=['POST'])
