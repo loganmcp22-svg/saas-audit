@@ -37,7 +37,7 @@ def index():
         costs = request.form.getlist('cost')
         usings = request.form.getlist('using')
 
-        subscriptions = []
+        submitted_names = set()
         for name, cost_str, using in zip(names, costs, usings):
             name = name.strip()
             if not name:
@@ -46,24 +46,53 @@ def index():
                 cost = float(cost_str)
             except (ValueError, TypeError):
                 cost = 0.0
-            subscriptions.append({
-                'name': name,
-                'cost': cost,
-                'using': using == 'yes',
-            })
+            submitted_names.add(name)
 
-        session['subscriptions'] = subscriptions
+            existing = models.Subscription.query.filter_by(
+                user_id=current_user.id, name=name
+            ).first()
+            if existing:
+                existing.monthly_cost = cost
+                existing.is_active = using == 'yes'
+            else:
+                db.session.add(models.Subscription(
+                    user_id=current_user.id,
+                    name=name,
+                    monthly_cost=cost,
+                    is_active=using == 'yes',
+                ))
+
+        # Remove subscriptions the user deleted from the form
+        if submitted_names:
+            models.Subscription.query.filter(
+                models.Subscription.user_id == current_user.id,
+                ~models.Subscription.name.in_(submitted_names),
+            ).delete(synchronize_session='fetch')
+        else:
+            models.Subscription.query.filter_by(user_id=current_user.id).delete()
+
+        db.session.commit()
         return redirect(url_for('results'))
 
-    return render_template('index.html')
+    db_subs = current_user.subscriptions.order_by(models.Subscription.created_at).all()
+    subs_data = [
+        {'name': s.name, 'cost': float(s.monthly_cost), 'using': 'yes' if s.is_active else 'no'}
+        for s in db_subs
+    ]
+    return render_template('index.html', subscriptions=subs_data)
 
 
 @app.route('/results')
 @login_required
 def results():
-    subscriptions = session.get('subscriptions', [])
-    if not subscriptions:
+    db_subs = current_user.subscriptions.order_by(models.Subscription.created_at).all()
+    if not db_subs:
         return redirect(url_for('index'))
+
+    subscriptions = [
+        {'name': s.name, 'cost': float(s.monthly_cost), 'using': s.is_active}
+        for s in db_subs
+    ]
 
     total = sum(s['cost'] for s in subscriptions)
     waste = sum(s['cost'] for s in subscriptions if not s['using'])

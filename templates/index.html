@@ -497,7 +497,7 @@
           <svg viewBox="0 0 16 16" fill="none" aria-hidden="true">
             <path d="M8 1.5L2.5 4v4c0 3.1 2.3 5.9 5.5 6.5 3.2-.6 5.5-3.4 5.5-6.5V4L8 1.5z" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/>
           </svg>
-          Data never stored or shared
+          Saved privately to your account
         </div>
         <div class="trust-item">
           <svg viewBox="0 0 16 16" fill="none" aria-hidden="true">
@@ -511,7 +511,7 @@
             <rect x="2" y="6.5" width="12" height="8" rx="1.5" stroke="currentColor" stroke-width="1.4"/>
             <path d="M5 6.5V5a3 3 0 016 0v1.5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>
           </svg>
-          Session-only, stays in your browser
+          Never shared with third parties
         </div>
       </div>
 
@@ -552,14 +552,13 @@
       row.querySelector('input[name="name"]').focus();
     });
 
-    // Seed with 4 starter rows
-    const starters = [
-      ['Slack',  '12.50', 'yes'],
-      ['Zoom',   '15.99', 'yes'],
-      ['Notion', '16.00', 'yes'],
-      ['',       '',      'yes'],
-    ];
-    starters.forEach(function (s) { container.appendChild(createRow(s[0], s[1], s[2])); });
+    // Seed from saved subscriptions, or one blank row for new users
+    const saved = {{ subscriptions | tojson }};
+    if (saved.length > 0) {
+      saved.forEach(function (s) { container.appendChild(createRow(s.name, s.cost, s.using)); });
+    } else {
+      container.appendChild(createRow());
+    }
   </script>
 </body>
 </html>
