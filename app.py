@@ -1,9 +1,24 @@
 import os
 import requests
 from flask import Flask, render_template, request, session, redirect, url_for, jsonify
+from extensions import db
 
 app = Flask(__name__)
 app.secret_key = os.environ.get('SECRET_KEY', 'saas-audit-dev-key-change-in-prod')
+
+database_url = os.environ.get('DATABASE_URL', '')
+# Railway (and Heroku) may supply postgres:// which SQLAlchemy 2.x requires as postgresql://
+if database_url.startswith('postgres://'):
+    database_url = database_url.replace('postgres://', 'postgresql://', 1)
+app.config['SQLALCHEMY_DATABASE_URI'] = database_url or 'sqlite:///local.db'
+app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+
+db.init_app(app)
+
+import models  # noqa: E402 — registers models with SQLAlchemy metadata
+
+with app.app_context():
+    db.create_all()
 
 
 @app.route('/', methods=['GET', 'POST'])
