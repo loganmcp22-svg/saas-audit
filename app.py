@@ -52,14 +52,38 @@ def index():
                 user_id=current_user.id, name=name
             ).first()
             if existing:
+                old_cost = float(existing.monthly_cost)
+                old_is_active = existing.is_active
                 existing.monthly_cost = cost
                 existing.is_active = using == 'yes'
+                if old_cost != cost:
+                    db.session.add(models.SubscriptionHistory(
+                        subscription_id=existing.id,
+                        changed_field='monthly_cost',
+                        old_value=str(old_cost),
+                        new_value=str(cost),
+                    ))
+                if old_is_active != (using == 'yes'):
+                    db.session.add(models.SubscriptionHistory(
+                        subscription_id=existing.id,
+                        changed_field='is_active',
+                        old_value=str(old_is_active),
+                        new_value=str(using == 'yes'),
+                    ))
             else:
-                db.session.add(models.Subscription(
+                sub = models.Subscription(
                     user_id=current_user.id,
                     name=name,
                     monthly_cost=cost,
                     is_active=using == 'yes',
+                )
+                db.session.add(sub)
+                db.session.flush()
+                db.session.add(models.SubscriptionHistory(
+                    subscription_id=sub.id,
+                    changed_field='created',
+                    old_value=None,
+                    new_value=str(cost),
                 ))
 
         # Remove subscriptions the user deleted from the form
@@ -109,6 +133,35 @@ def results():
         waste_pct=waste_pct,
         wasted_count=wasted_count,
     )
+
+
+@app.route('/changes')
+@login_required
+def changes():
+    history = (
+        models.SubscriptionHistory.query
+        .join(models.Subscription)
+        .filter(models.Subscription.user_id == current_user.id)
+        .order_by(models.SubscriptionHistory.changed_at.desc())
+        .all()
+    )
+    entries = []
+    for h in history:
+        sub_name = h.subscription.name
+        date_str = h.changed_at.strftime('%b %d, %Y')
+        if h.changed_field == 'created':
+            entries.append(f'{sub_name} added at ${float(h.new_value):.2f}/mo on {date_str}')
+        elif h.changed_field == 'monthly_cost':
+            old = float(h.old_value)
+            new = float(h.new_value)
+            direction = 'increased' if new > old else 'decreased'
+            entries.append(f'{sub_name} price {direction} from ${old:.2f} to ${new:.2f} on {date_str}')
+        elif h.changed_field == 'is_active':
+            if h.new_value == 'False':
+                entries.append(f'{sub_name} marked as no longer in use on {date_str}')
+            else:
+                entries.append(f'{sub_name} marked as in use again on {date_str}')
+    return render_template('changes.html', entries=entries)
 
 
 @app.route('/pricing')
