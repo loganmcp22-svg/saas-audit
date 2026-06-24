@@ -2,7 +2,7 @@ import os
 from sendgrid import SendGridAPIClient
 from sendgrid.helpers.mail import Mail
 
-FROM_EMAIL = 'noreply@subaudit.io'
+FROM_EMAIL = 'businessl0514@gmail.com'
 
 
 def _format_entry(h):
