@@ -170,6 +170,44 @@
       .navbar { padding: 0 16px; }
     }
 
+    .email-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      background: var(--green);
+      color: #ffffff;
+      font-size: 0.875rem;
+      font-weight: 600;
+      border: none;
+      border-radius: 8px;
+      padding: 9px 18px;
+      cursor: pointer;
+      transition: background 0.15s, opacity 0.15s;
+    }
+
+    .email-btn:hover { background: var(--green-dark); }
+    .email-btn:disabled { opacity: 0.6; cursor: not-allowed; }
+
+    .email-status {
+      margin-top: 14px;
+      font-size: 0.875rem;
+      border-radius: 8px;
+      padding: 10px 14px;
+      display: none;
+    }
+
+    .email-status.success {
+      background: var(--green-light);
+      border: 1px solid var(--green-border);
+      color: var(--green-dark);
+    }
+
+    .email-status.error {
+      background: #fef2f2;
+      border: 1px solid #fecaca;
+      color: #b91c1c;
+    }
+
     @media (max-width: 560px) {
       .page { padding: 28px 12px 44px; }
       .card { padding: 20px 14px; }
@@ -208,6 +246,18 @@
         <p>A history of every change made to your subscriptions.</p>
       </header>
 
+      {% if current_user.is_authenticated %}
+      <div style="margin-bottom:28px;">
+        <button class="email-btn" id="sendEmailBtn">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <rect x="2" y="4" width="20" height="16" rx="2"/><polyline points="2,4 12,13 22,4"/>
+          </svg>
+          Send Test Email
+        </button>
+        <div class="email-status" id="emailStatus"></div>
+      </div>
+      {% endif %}
+
       <div class="card">
         <div class="card-label">Change History</div>
         {% if entries %}
@@ -224,5 +274,34 @@
     </div>
   </div>
 
+  <script>
+    document.getElementById('sendEmailBtn').addEventListener('click', async function () {
+      const btn = this;
+      const status = document.getElementById('emailStatus');
+      btn.disabled = true;
+      btn.textContent = 'Sending…';
+      status.style.display = 'none';
+      status.className = 'email-status';
+
+      try {
+        const res = await fetch('/send-test-email', { method: 'POST' });
+        const data = await res.json();
+        if (res.ok && data.ok) {
+          status.textContent = 'Email sent! Check your inbox at {{ current_user.email }}.';
+          status.classList.add('success');
+        } else {
+          status.textContent = 'Failed to send: ' + (data.error || 'Unknown error.');
+          status.classList.add('error');
+        }
+      } catch (e) {
+        status.textContent = 'Network error. Please try again.';
+        status.classList.add('error');
+      }
+
+      status.style.display = 'block';
+      btn.disabled = false;
+      btn.innerHTML = '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2" y="4" width="20" height="16" rx="2"/><polyline points="2,4 12,13 22,4"/></svg> Send Test Email';
+    });
+  </script>
 </body>
 </html>

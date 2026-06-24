@@ -4,6 +4,7 @@ from flask import Flask, render_template, request, session, redirect, url_for, j
 from flask_login import login_user, logout_user, login_required, current_user
 from werkzeug.security import generate_password_hash, check_password_hash
 from extensions import db, login_manager
+from email_utils import send_change_summary
 
 app = Flask(__name__)
 app.secret_key = os.environ.get('SECRET_KEY', 'saas-audit-dev-key-change-in-prod')
@@ -162,6 +163,22 @@ def changes():
             else:
                 entries.append(f'{sub_name} marked as in use again on {date_str}')
     return render_template('changes.html', entries=entries)
+
+
+@app.route('/send-test-email', methods=['POST'])
+@login_required
+def send_test_email():
+    history = (
+        models.SubscriptionHistory.query
+        .join(models.Subscription)
+        .filter(models.Subscription.user_id == current_user.id)
+        .order_by(models.SubscriptionHistory.changed_at.desc())
+        .all()
+    )
+    ok, error = send_change_summary(current_user.email, history)
+    if ok:
+        return jsonify({'ok': True})
+    return jsonify({'error': error}), 500
 
 
 @app.route('/pricing')
