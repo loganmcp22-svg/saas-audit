@@ -1,5 +1,6 @@
 import os
 import requests
+from datetime import datetime, timedelta, timezone
 from flask import Flask, render_template, request, session, redirect, url_for, jsonify
 from flask_login import login_user, logout_user, login_required, current_user
 from werkzeug.security import generate_password_hash, check_password_hash
@@ -179,6 +180,43 @@ def send_test_email():
     if ok:
         return jsonify({'ok': True})
     return jsonify({'error': error}), 500
+
+
+@app.route('/cron/send-monthly-emails', methods=['POST'])
+def cron_send_monthly_emails():
+    secret = os.environ.get('CRON_SECRET', '')
+    if not secret or request.headers.get('X-Cron-Secret') != secret:
+        return jsonify({'error': 'Unauthorized'}), 401
+
+    cutoff = datetime.now(timezone.utc) - timedelta(days=30)
+    users = models.User.query.all()
+
+    sent = []
+    failed = []
+    skipped = []
+
+    for user in users:
+        history = (
+            models.SubscriptionHistory.query
+            .join(models.Subscription)
+            .filter(
+                models.Subscription.user_id == user.id,
+                models.SubscriptionHistory.changed_at >= cutoff,
+            )
+            .order_by(models.SubscriptionHistory.changed_at.desc())
+            .all()
+        )
+        if not history:
+            skipped.append(user.email)
+            continue
+
+        ok, error = send_change_summary(user.email, history)
+        if ok:
+            sent.append(user.email)
+        else:
+            failed.append({'email': user.email, 'error': error})
+
+    return jsonify({'sent': sent, 'failed': failed, 'skipped': skipped})
 
 
 @app.route('/pricing')
