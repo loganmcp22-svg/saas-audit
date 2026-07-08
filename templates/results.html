@@ -1,197 +1,103 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Audit Results — SubAudit</title>
-  <style>
-    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+{% extends 'base.html' %}
 
-    :root {
-      --navy:        #0f172a;
-      --navy-2:      #1e293b;
-      --navy-3:      #334155;
-      --green:       #10b981;
-      --green-dark:  #059669;
-      --green-light: #ecfdf5;
-      --green-border:#a7f3d0;
-      --page-bg:     #f8fafc;
-      --card-bg:     #ffffff;
-      --border:      #e2e8f0;
-      --text:        #0f172a;
-      --muted:       #64748b;
-      --subtle:      #94a3b8;
-    }
+{% block title %}Audit Results — SubAudit{% endblock %}
 
-    body {
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-      background: var(--page-bg);
-      color: var(--text);
-      min-height: 100vh;
-    }
-
-    /* ── Navbar ── */
-    .navbar {
-      background: var(--navy);
-      padding: 0 28px;
-      height: 60px;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      box-shadow: 0 1px 0 rgba(255,255,255,0.05);
-    }
-
-    .brand {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      text-decoration: none;
-    }
-
-    .brand-icon {
-      width: 32px;
-      height: 32px;
-      flex-shrink: 0;
-    }
-
-    .brand-name {
-      font-size: 1.18rem;
-      font-weight: 800;
-      color: #ffffff;
-      letter-spacing: -0.03em;
-    }
-
-    .brand-name .accent { color: var(--green); }
-
-    .nav-right {
-      display: flex;
-      align-items: center;
-      gap: 6px;
-    }
-
-    .nav-link {
-      color: rgba(255,255,255,0.6);
-      font-size: 0.875rem;
-      font-weight: 500;
-      text-decoration: none;
-      padding: 6px 12px;
-      border-radius: 6px;
-      transition: color 0.15s, background 0.15s;
-    }
-
-    .nav-link:hover {
-      color: #ffffff;
-      background: rgba(255,255,255,0.08);
-    }
-
-    .nav-back {
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
-      color: rgba(255,255,255,0.6);
-      font-size: 0.84rem;
-      font-weight: 500;
-      text-decoration: none;
-      padding: 6px 10px;
-      border-radius: 6px;
-      transition: color 0.15s, background 0.15s;
-    }
-
-    .nav-back:hover {
-      color: #ffffff;
-      background: rgba(255,255,255,0.08);
-    }
-
-    /* ── Page body ── */
-    .page {
-      padding: 52px 20px 64px;
-    }
-
-    .container {
-      max-width: 780px;
-      margin: 0 auto;
-    }
-
-    /* ── Page header ── */
-    header {
+{% block style %}
+    /* ── Waste hero ── */
+    .waste-hero {
       text-align: center;
-      margin-bottom: 36px;
+      padding: 44px 32px 40px;
+      margin-bottom: 24px;
+      position: relative;
+      overflow: hidden;
     }
 
-    header h1 {
-      font-size: 2rem;
+    .waste-hero.bad {
+      background:
+        radial-gradient(500px 220px at 50% -40%, rgba(220,38,38,0.07), transparent 70%),
+        var(--card-bg);
+      border-color: var(--red-border);
+    }
+
+    .waste-hero.clean {
+      background:
+        radial-gradient(500px 220px at 50% -40%, rgba(16,185,129,0.09), transparent 70%),
+        var(--card-bg);
+      border-color: var(--green-border);
+    }
+
+    .waste-kicker {
+      font-size: 0.76rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: var(--subtle);
+      margin-bottom: 12px;
+    }
+
+    .waste-amount {
+      font-size: 4.6rem;
       font-weight: 800;
-      letter-spacing: -0.04em;
-      color: var(--navy);
-      margin-bottom: 8px;
+      letter-spacing: -0.05em;
+      line-height: 1;
+      color: var(--red);
+      font-variant-numeric: tabular-nums;
+      margin-bottom: 6px;
     }
 
-    header p {
+    .waste-amount .per {
+      font-size: 1.5rem;
+      font-weight: 700;
+      color: #f87171;
+      letter-spacing: -0.02em;
+    }
+
+    .waste-hero.clean .waste-amount { color: var(--green-dark); }
+    .waste-hero.clean .waste-amount .per { color: var(--green); }
+
+    .waste-year {
+      font-size: 1.05rem;
       color: var(--muted);
-      font-size: 0.95rem;
+      line-height: 1.6;
+      max-width: 430px;
+      margin: 10px auto 0;
     }
 
-    /* ── Insight banner ── */
-    .insight {
-      border-radius: 12px;
-      padding: 18px 22px;
-      margin-bottom: 28px;
-      display: flex;
-      align-items: center;
-      gap: 14px;
-      font-size: 0.97rem;
-      font-weight: 500;
-      line-height: 1.5;
+    .waste-year strong {
+      color: var(--red);
+      font-weight: 800;
+      white-space: nowrap;
     }
 
-    .insight.waste {
-      background: #fef2f2;
-      border: 1.5px solid #fecaca;
-      color: #991b1b;
-    }
-
-    .insight.clean {
-      background: var(--green-light);
-      border: 1.5px solid var(--green-border);
-      color: var(--green-dark);
-    }
-
-    .insight-icon {
-      font-size: 1.55rem;
-      flex-shrink: 0;
-    }
-
-    .insight strong { font-weight: 700; }
+    .waste-hero.clean .waste-year strong { color: var(--green-dark); }
 
     /* ── Stat cards ── */
     .stats {
       display: grid;
       grid-template-columns: repeat(3, 1fr);
       gap: 16px;
-      margin-bottom: 28px;
-    }
-
-    @media (max-width: 620px) {
-      .stats { grid-template-columns: repeat(2, 1fr); }
-    }
-
-    @media (max-width: 400px) {
-      .stats { grid-template-columns: 1fr; }
+      margin-bottom: 24px;
     }
 
     .stat {
       background: var(--card-bg);
       border-radius: 14px;
-      padding: 22px 20px;
-      box-shadow: 0 1px 3px rgba(0,0,0,0.05), 0 4px 12px rgba(15,23,42,0.06);
+      padding: 20px;
+      box-shadow: var(--shadow-card);
       border: 1px solid var(--border);
       display: flex;
       flex-direction: column;
       gap: 4px;
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    .stat:hover {
+      transform: translateY(-2px);
+      box-shadow: var(--shadow-card-hover);
     }
 
     .stat-label {
-      font-size: 0.73rem;
+      font-size: 0.72rem;
       font-weight: 700;
       text-transform: uppercase;
       letter-spacing: 0.07em;
@@ -199,31 +105,28 @@
     }
 
     .stat-value {
-      font-size: 1.9rem;
+      font-size: 1.8rem;
       font-weight: 800;
       letter-spacing: -0.04em;
       line-height: 1.1;
       margin: 4px 0;
+      font-variant-numeric: tabular-nums;
     }
 
-    .stat-sub {
-      font-size: 0.78rem;
-      color: var(--subtle);
-      font-weight: 500;
-    }
+    .stat-sub { font-size: 0.78rem; color: var(--subtle); font-weight: 500; }
 
     .stat.total  .stat-value { color: var(--navy); }
     .stat.active .stat-value { color: var(--green-dark); }
-    .stat.waste  .stat-value { color: #dc2626; }
-    .stat.waste  { border-color: #fecaca; }
+    .stat.waste  .stat-value { color: var(--red); }
+    .stat.waste  { border-color: var(--red-border); }
 
     /* ── Waste bar ── */
     .bar-section {
       background: var(--card-bg);
       border-radius: 14px;
       padding: 20px 24px;
-      margin-bottom: 28px;
-      box-shadow: 0 1px 3px rgba(0,0,0,0.05), 0 4px 12px rgba(15,23,42,0.06);
+      margin-bottom: 24px;
+      box-shadow: var(--shadow-card);
       border: 1px solid var(--border);
     }
 
@@ -236,10 +139,10 @@
       margin-bottom: 10px;
     }
 
-    .bar-labels .pct { color: #dc2626; }
+    .bar-labels .pct { color: var(--red); }
 
     .bar-track {
-      background: #e2e8f0;
+      background: #e8edf3;
       border-radius: 99px;
       height: 14px;
       overflow: hidden;
@@ -248,19 +151,16 @@
     .bar-fill {
       height: 100%;
       border-radius: 99px;
-      background: linear-gradient(90deg, #ef4444, #dc2626);
-      transition: width 0.8s cubic-bezier(.4,0,.2,1);
+      background: linear-gradient(90deg, #f87171, #dc2626);
+      transition: width 0.9s cubic-bezier(.4,0,.2,1);
       min-width: {{ '2px' if waste_pct > 0 else '0' }};
+      width: 0;
     }
 
     /* ── Subscription table ── */
-    .card {
-      background: var(--card-bg);
-      border-radius: 14px;
+    .table-card {
       padding: 0;
       overflow: hidden;
-      box-shadow: 0 1px 3px rgba(0,0,0,0.05), 0 4px 12px rgba(15,23,42,0.06);
-      border: 1px solid var(--border);
       margin-bottom: 28px;
     }
 
@@ -278,29 +178,26 @@
       text-transform: uppercase;
       letter-spacing: 0.07em;
       color: var(--subtle);
-      background: #fafafa;
+      background: #fafbfd;
       border-bottom: 1.5px solid #f1f5f9;
     }
 
     tbody tr {
       border-bottom: 1px solid #f1f5f9;
-      transition: background 0.1s;
+      transition: background 0.15s ease;
     }
 
     tbody tr:last-child { border-bottom: none; }
-    tbody tr:hover { background: #fafafa; }
+    tbody tr:hover { background: #f8fafc; }
 
     tbody tr.waste-row { background: #fff9f9; }
     tbody tr.waste-row:hover { background: #fff1f1; }
 
-    td {
-      padding: 14px 20px;
-      vertical-align: middle;
-    }
+    td { padding: 14px 20px; vertical-align: middle; }
 
     td.name-cell  { font-weight: 600; color: var(--text); }
     td.cost-cell  { font-variant-numeric: tabular-nums; color: #374151; }
-    td.cost-cell.waste-cost { color: #dc2626; font-weight: 700; }
+    td.cost-cell.waste-cost { color: var(--red); font-weight: 700; }
 
     tfoot td {
       padding: 14px 20px;
@@ -311,7 +208,6 @@
       color: var(--navy);
     }
 
-    /* ── Status badges ── */
     .badge {
       display: inline-flex;
       align-items: center;
@@ -323,57 +219,21 @@
       letter-spacing: 0.02em;
     }
 
-    .badge-active {
-      background: var(--green-light);
-      color: var(--green-dark);
-    }
+    .badge-active { background: var(--green-light); color: var(--green-dark); }
+    .badge-waste  { background: var(--red-light); color: var(--red); }
 
-    .badge-waste {
-      background: #fef2f2;
-      color: #dc2626;
-    }
-
-    /* ── Footer ── */
-    .footer {
-      display: flex;
-      justify-content: center;
-    }
-
-    .btn-back {
-      display: inline-flex;
-      align-items: center;
-      gap: 8px;
-      padding: 12px 28px;
-      background: var(--navy);
-      color: #ffffff;
-      border: none;
-      border-radius: 10px;
-      font-size: 0.93rem;
-      font-weight: 700;
-      text-decoration: none;
-      transition: background 0.15s;
-    }
-
-    .btn-back:hover { background: var(--navy-2); }
+    .footer { display: flex; justify-content: center; }
 
     /* ── Mobile ── */
-    @media (max-width: 420px) {
-      .navbar { padding: 0 16px; }
+    @media (max-width: 620px) {
+      .stats { grid-template-columns: 1fr; }
     }
 
     @media (max-width: 560px) {
-      .page { padding: 28px 12px 44px; }
-
-      header { margin-bottom: 24px; }
-      header h1 { font-size: 1.6rem; }
-
-      /* Tighten insight banner so long text wraps cleanly */
-      .insight {
-        padding: 14px 16px;
-        gap: 10px;
-        font-size: 0.9rem;
-        align-items: flex-start;
-      }
+      .waste-hero { padding: 32px 18px 30px; }
+      .waste-amount { font-size: 3.2rem; }
+      .waste-amount .per { font-size: 1.15rem; }
+      .waste-year { font-size: 0.95rem; }
 
       /* Drop Annual Cost column — too cramped on small screens */
       thead th:nth-child(3),
@@ -382,61 +242,37 @@
 
       thead th, td, tfoot td { padding: 11px 14px; }
 
-      /* Full-width back button — easier to tap */
-      .btn-back {
-        width: 100%;
-        justify-content: center;
-        padding: 14px 20px;
-      }
+      .footer .btn-dark { width: 100%; }
     }
-  </style>
-</head>
-<body>
+{% endblock %}
 
-  <nav class="navbar">
-    <a href="/" class="brand">
-      <svg class="brand-icon" viewBox="0 0 36 36" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-        <rect width="36" height="36" rx="8" fill="#1e293b"/>
-        <rect x="8" y="10" width="13" height="2.2" rx="1.1" fill="#10b981"/>
-        <rect x="8" y="15" width="9" height="2.2" rx="1.1" fill="#10b981" fill-opacity="0.65"/>
-        <rect x="8" y="20" width="11" height="2.2" rx="1.1" fill="#10b981" fill-opacity="0.4"/>
-        <circle cx="24.5" cy="24.5" r="4.5" stroke="#10b981" stroke-width="2" fill="none"/>
-        <line x1="27.7" y1="27.7" x2="30.5" y2="30.5" stroke="#10b981" stroke-width="2" stroke-linecap="round"/>
-      </svg>
-      <span class="brand-name">Sub<span class="accent">Audit</span></span>
-    </a>
-    <div class="nav-right">
-      <a href="/changes" class="nav-link">Changes</a>
-      <a href="/pricing" class="nav-link">Pricing</a>
-      <a href="/" class="nav-back">&larr; New Audit</a>
-    </div>
-  </nav>
-
+{% block content %}
   <div class="page">
     <div class="container">
 
-      <header>
-        <h1>Your Audit Results</h1>
-        <p>Here's where your SaaS budget is going — and where it's being wasted.</p>
-      </header>
-
       {% if waste > 0 %}
-      <div class="insight waste">
-        <span class="insight-icon">&#9888;&#65039;</span>
-        <span>
-          You could save <strong>${{ "%.2f"|format(waste) }}/month (${{ "%.0f"|format(waste * 12) }}/year)</strong>
-          by canceling {{ wasted_count }} unused subscription{{ 's' if wasted_count != 1 else '' }}.
-        </span>
+      <div class="card waste-hero bad fade">
+        <div class="waste-kicker">Your Monthly Waste</div>
+        <div class="waste-amount">${{ "%.0f"|format(waste) }}<span class="per">/mo</span></div>
+        <p class="waste-year">
+          You're wasting <strong>${{ "%.0f"|format(waste * 12) }} a year</strong> on
+          {{ wasted_count }} subscription{{ 's' if wasted_count != 1 else '' }} nobody is using.
+          Cancel {{ 'them' if wasted_count != 1 else 'it' }} and keep that money.
+        </p>
       </div>
       {% else %}
-      <div class="insight clean">
-        <span class="insight-icon">&#10003;</span>
-        <span><strong>No waste detected!</strong> Every subscription you listed is actively in use.</span>
+      <div class="card waste-hero clean fade">
+        <div class="waste-kicker">Your Monthly Waste</div>
+        <div class="waste-amount">$0<span class="per">/mo</span></div>
+        <p class="waste-year">
+          <strong>No waste detected!</strong> Every subscription you listed is actively in use.
+          Nice work running a tight ship.
+        </p>
       </div>
       {% endif %}
 
       <!-- Stat cards -->
-      <div class="stats">
+      <div class="stats fade d1">
         <div class="stat total">
           <div class="stat-label">Total Monthly Spend</div>
           <div class="stat-value">${{ "%.2f"|format(total) }}</div>
@@ -456,19 +292,19 @@
 
       <!-- Waste bar -->
       {% if total > 0 %}
-      <div class="bar-section">
+      <div class="bar-section fade d2">
         <div class="bar-labels">
           <span>Budget allocation</span>
           <span class="pct">{{ "%.0f"|format(waste_pct) }}% wasted</span>
         </div>
         <div class="bar-track">
-          <div class="bar-fill" style="width: {{ waste_pct }}%"></div>
+          <div class="bar-fill" id="wasteBar" data-pct="{{ waste_pct }}"></div>
         </div>
       </div>
       {% endif %}
 
       <!-- Subscription table -->
-      <div class="card">
+      <div class="card table-card fade d3">
         <table>
           <thead>
             <tr>
@@ -505,12 +341,24 @@
         </table>
       </div>
 
-      <div class="footer">
-        <a href="/" class="btn-back">&larr; Start New Audit</a>
+      <div class="footer fade d4">
+        <a href="/" class="btn-dark">&larr; Edit Your Subscriptions</a>
       </div>
 
     </div>
   </div>
+{% endblock %}
 
-</body>
-</html>
+{% block scripts %}
+  <script>
+    // Animate the waste bar in after load
+    const bar = document.getElementById('wasteBar');
+    if (bar) {
+      requestAnimationFrame(function () {
+        requestAnimationFrame(function () {
+          bar.style.width = bar.dataset.pct + '%';
+        });
+      });
+    }
+  </script>
+{% endblock %}

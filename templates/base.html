@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}SubAudit — Subscription Monitor{% endblock %}</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --navy:        #0f172a;
+      --navy-2:      #1e293b;
+      --navy-3:      #334155;
+      --green:       #10b981;
+      --green-dark:  #059669;
+      --green-light: #ecfdf5;
+      --green-ring:  rgba(16, 185, 129, 0.18);
+      --green-border:#a7f3d0;
+      --red:         #dc2626;
+      --red-light:   #fef2f2;
+      --red-border:  #fecaca;
+      --page-bg:     #f6f8fb;
+      --card-bg:     #ffffff;
+      --border:      #e2e8f0;
+      --text:        #0f172a;
+      --muted:       #64748b;
+      --subtle:      #94a3b8;
+      --shadow-card: 0 1px 2px rgba(15,23,42,0.04), 0 8px 24px -6px rgba(15,23,42,0.10);
+      --shadow-card-hover: 0 2px 4px rgba(15,23,42,0.05), 0 16px 36px -8px rgba(15,23,42,0.15);
+      --radius:      16px;
+    }
+
+    html { -webkit-text-size-adjust: 100%; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+      background:
+        radial-gradient(900px 420px at 85% -10%, rgba(16,185,129,0.07), transparent 60%),
+        radial-gradient(700px 380px at -5% 0%, rgba(59,130,246,0.05), transparent 55%),
+        var(--page-bg);
+      background-attachment: fixed;
+      color: var(--text);
+      min-height: 100vh;
+    }
+
+    /* ── Navbar ── */
+    .navbar {
+      position: sticky;
+      top: 0;
+      z-index: 50;
+      background: linear-gradient(135deg, #0b1120 0%, #0f172a 55%, #14263f 100%);
+      padding: 0 28px;
+      height: 64px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      box-shadow: 0 1px 0 rgba(255,255,255,0.06), 0 6px 18px -8px rgba(2,6,23,0.5);
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 11px;
+      text-decoration: none;
+    }
+
+    .brand-icon {
+      width: 34px;
+      height: 34px;
+      flex-shrink: 0;
+      filter: drop-shadow(0 2px 6px rgba(16,185,129,0.3));
+    }
+
+    .brand-text {
+      display: flex;
+      flex-direction: column;
+      line-height: 1.05;
+    }
+
+    .brand-name {
+      font-size: 1.15rem;
+      font-weight: 800;
+      color: #ffffff;
+      letter-spacing: -0.03em;
+    }
+
+    .brand-name .accent { color: var(--green); }
+
+    .brand-tag {
+      font-size: 0.64rem;
+      font-weight: 600;
+      letter-spacing: 0.05em;
+      color: rgba(255,255,255,0.45);
+      margin-top: 2px;
+      white-space: nowrap;
+    }
+
+    .nav-right {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .nav-link {
+      color: rgba(255,255,255,0.62);
+      font-size: 0.875rem;
+      font-weight: 500;
+      text-decoration: none;
+      padding: 7px 12px;
+      border-radius: 8px;
+      white-space: nowrap;
+      transition: color 0.18s ease, background 0.18s ease;
+    }
+
+    .nav-link:hover {
+      color: #ffffff;
+      background: rgba(255,255,255,0.08);
+    }
+
+    .nav-link.active {
+      color: #ffffff;
+      background: rgba(255,255,255,0.1);
+    }
+
+    .nav-email {
+      color: rgba(255,255,255,0.4);
+      font-size: 0.8rem;
+      padding: 0 6px;
+      max-width: 190px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .nav-cta {
+      background: linear-gradient(135deg, var(--green), var(--green-dark));
+      color: #ffffff;
+      font-size: 0.85rem;
+      font-weight: 700;
+      padding: 8px 16px;
+      border-radius: 8px;
+      text-decoration: none;
+      white-space: nowrap;
+      margin-left: 6px;
+      box-shadow: 0 2px 10px rgba(16,185,129,0.35), inset 0 1px 0 rgba(255,255,255,0.18);
+      transition: transform 0.18s ease, box-shadow 0.18s ease;
+    }
+
+    .nav-cta:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 5px 16px rgba(16,185,129,0.45), inset 0 1px 0 rgba(255,255,255,0.18);
+    }
+
+    /* ── Layout ── */
+    .page { padding: 52px 20px 72px; }
+
+    .container {
+      max-width: 780px;
+      margin: 0 auto;
+    }
+
+    /* ── Cards ── */
+    .card {
+      background: var(--card-bg);
+      border-radius: var(--radius);
+      border: 1px solid var(--border);
+      box-shadow: var(--shadow-card);
+      transition: box-shadow 0.25s ease;
+    }
+
+    .card-label {
+      font-size: 0.72rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--subtle);
+      margin-bottom: 20px;
+    }
+
+    /* ── Buttons ── */
+    .btn-primary,
+    .btn-dark {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      padding: 13px 26px;
+      border: none;
+      border-radius: 10px;
+      font-size: 0.95rem;
+      font-weight: 700;
+      letter-spacing: -0.01em;
+      cursor: pointer;
+      text-decoration: none;
+      transition: transform 0.18s ease, box-shadow 0.18s ease, filter 0.18s ease;
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, var(--green), var(--green-dark));
+      color: #ffffff;
+      box-shadow: 0 2px 12px rgba(16,185,129,0.35), inset 0 1px 0 rgba(255,255,255,0.18);
+    }
+
+    .btn-primary:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 6px 18px rgba(16,185,129,0.45), inset 0 1px 0 rgba(255,255,255,0.18);
+      filter: saturate(1.05);
+    }
+
+    .btn-primary:active { transform: translateY(0) scale(0.98); }
+
+    .btn-dark {
+      background: linear-gradient(135deg, var(--navy-2), var(--navy));
+      color: #ffffff;
+      box-shadow: 0 2px 12px rgba(15,23,42,0.3), inset 0 1px 0 rgba(255,255,255,0.08);
+    }
+
+    .btn-dark:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 6px 18px rgba(15,23,42,0.35), inset 0 1px 0 rgba(255,255,255,0.08);
+    }
+
+    .btn-dark:active { transform: translateY(0) scale(0.98); }
+
+    /* ── Badges ── */
+    .hero-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: var(--green-light);
+      color: var(--green-dark);
+      border: 1px solid var(--green-border);
+      font-size: 0.74rem;
+      font-weight: 700;
+      letter-spacing: 0.07em;
+      text-transform: uppercase;
+      padding: 5px 14px;
+      border-radius: 20px;
+    }
+
+    .hero-badge svg { width: 11px; height: 11px; flex-shrink: 0; }
+
+    /* ── Entrance animation ── */
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(12px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    .fade { animation: fadeUp 0.55s cubic-bezier(0.22, 0.61, 0.36, 1) both; }
+    .fade.d1 { animation-delay: 0.07s; }
+    .fade.d2 { animation-delay: 0.14s; }
+    .fade.d3 { animation-delay: 0.21s; }
+    .fade.d4 { animation-delay: 0.28s; }
+
+    @media (prefers-reduced-motion: reduce) {
+      .fade { animation: none; }
+    }
+
+    /* ── Mobile navbar ── */
+    @media (max-width: 700px) {
+      .nav-email { display: none; }
+    }
+
+    @media (max-width: 560px) {
+      .navbar { padding: 0 14px; }
+      .nav-link { padding: 6px 8px; font-size: 0.82rem; }
+      .nav-cta { padding: 7px 12px; font-size: 0.8rem; margin-left: 2px; }
+      .nav-dash { display: none; }
+      .page { padding: 28px 12px 48px; }
+    }
+
+    @media (max-width: 420px) {
+      .navbar { padding: 0 10px; }
+      .brand { gap: 8px; }
+      .brand-icon { width: 30px; height: 30px; }
+      .brand-name { font-size: 1.02rem; }
+      .brand-tag { font-size: 0.56rem; }
+      .nav-right { gap: 2px; }
+      .nav-link { padding: 5px 6px; font-size: 0.78rem; }
+      .nav-cta { padding: 6px 10px; font-size: 0.76rem; }
+    }
+
+    {% block style %}{% endblock %}
+  </style>
+</head>
+<body>
+
+  <nav class="navbar">
+    <a href="/" class="brand">
+      <svg class="brand-icon" viewBox="0 0 36 36" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+        <rect width="36" height="36" rx="8" fill="#1e293b"/>
+        <rect x="8" y="10" width="13" height="2.2" rx="1.1" fill="#10b981"/>
+        <rect x="8" y="15" width="9" height="2.2" rx="1.1" fill="#10b981" fill-opacity="0.65"/>
+        <rect x="8" y="20" width="11" height="2.2" rx="1.1" fill="#10b981" fill-opacity="0.4"/>
+        <circle cx="24.5" cy="24.5" r="4.5" stroke="#10b981" stroke-width="2" fill="none"/>
+        <line x1="27.7" y1="27.7" x2="30.5" y2="30.5" stroke="#10b981" stroke-width="2" stroke-linecap="round"/>
+      </svg>
+      <span class="brand-text">
+        <span class="brand-name">Sub<span class="accent">Audit</span></span>
+        <span class="brand-tag">Subscription Monitor</span>
+      </span>
+    </a>
+    <div class="nav-right">
+      {% if current_user.is_authenticated %}
+      <a href="/" class="nav-link nav-dash {{ 'active' if active_page == 'dashboard' else '' }}">Dashboard</a>
+      <a href="/changes" class="nav-link {{ 'active' if active_page == 'changes' else '' }}">Changes</a>
+      <a href="/pricing" class="nav-link {{ 'active' if active_page == 'pricing' else '' }}">Pricing</a>
+      <span class="nav-email">{{ current_user.email }}</span>
+      <a href="/logout" class="nav-link">Log Out</a>
+      {% else %}
+      <a href="/pricing" class="nav-link {{ 'active' if active_page == 'pricing' else '' }}">Pricing</a>
+      <a href="/login" class="nav-link">Log In</a>
+      <a href="/signup" class="nav-cta">Sign Up Free</a>
+      {% endif %}
+    </div>
+  </nav>
+
+  {% block content %}{% endblock %}
+
+  {% block scripts %}{% endblock %}
+</body>
+</html>

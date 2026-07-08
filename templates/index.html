@@ -1,185 +1,277 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>SubAudit — Find &amp; Cut Hidden SaaS Waste</title>
-  <style>
-    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+{% extends 'base.html' %}
+{% set active_page = 'dashboard' %}
 
-    :root {
-      --navy:        #0f172a;
-      --navy-2:      #1e293b;
-      --navy-3:      #334155;
-      --green:       #10b981;
-      --green-dark:  #059669;
-      --green-light: #ecfdf5;
-      --green-ring:  rgba(16, 185, 129, 0.15);
-      --green-border:#a7f3d0;
-      --page-bg:     #f8fafc;
-      --card-bg:     #ffffff;
-      --border:      #e2e8f0;
-      --text:        #0f172a;
-      --muted:       #64748b;
-      --subtle:      #94a3b8;
-    }
+{% block title %}SubAudit — Stop Paying for Software You Don't Use{% endblock %}
 
-    body {
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-      background: var(--page-bg);
-      color: var(--text);
-      min-height: 100vh;
-    }
-
-    /* ── Navbar ── */
-    .navbar {
-      background: var(--navy);
-      padding: 0 28px;
-      height: 60px;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      box-shadow: 0 1px 0 rgba(255,255,255,0.05);
-    }
-
-    .brand {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      text-decoration: none;
-    }
-
-    .brand-icon {
-      width: 32px;
-      height: 32px;
-      flex-shrink: 0;
-    }
-
-    .brand-name {
-      font-size: 1.18rem;
-      font-weight: 800;
-      color: #ffffff;
-      letter-spacing: -0.03em;
-    }
-
-    .brand-name .accent { color: var(--green); }
-
-    .nav-right {
-      display: flex;
-      align-items: center;
-      gap: 6px;
-    }
-
-    .nav-link {
-      color: rgba(255,255,255,0.6);
-      font-size: 0.875rem;
-      font-weight: 500;
-      text-decoration: none;
-      padding: 6px 12px;
-      border-radius: 6px;
-      transition: color 0.15s, background 0.15s;
-    }
-
-    .nav-link:hover {
-      color: #ffffff;
-      background: rgba(255,255,255,0.08);
-    }
-
-    .nav-pill {
-      background: rgba(16, 185, 129, 0.12);
-      color: var(--green);
-      border: 1px solid rgba(16, 185, 129, 0.28);
-      font-size: 0.7rem;
-      font-weight: 700;
-      letter-spacing: 0.07em;
-      text-transform: uppercase;
-      padding: 4px 10px;
-      border-radius: 20px;
-    }
-
-    .nav-email {
-      color: rgba(255,255,255,0.45);
-      font-size: 0.82rem;
-      padding: 0 4px;
-    }
-
-    /* ── Page body ── */
-    .page {
-      padding: 56px 20px 64px;
-    }
-
-    .container {
-      max-width: 780px;
+{% block style %}
+    /* ── Hero (logged out) ── */
+    .hero {
+      max-width: 1060px;
       margin: 0 auto;
-    }
-
-    /* ── Hero header ── */
-    header {
-      text-align: center;
-      margin-bottom: 44px;
-    }
-
-    .hero-badge {
-      display: inline-flex;
+      padding: 84px 24px 72px;
+      display: grid;
+      grid-template-columns: 1.15fr 0.85fr;
+      gap: 56px;
       align-items: center;
-      gap: 6px;
-      background: var(--green-light);
-      color: var(--green-dark);
-      border: 1px solid var(--green-border);
-      font-size: 0.74rem;
-      font-weight: 700;
-      letter-spacing: 0.07em;
-      text-transform: uppercase;
-      padding: 5px 14px;
-      border-radius: 20px;
-      margin-bottom: 20px;
     }
 
-    .hero-badge svg {
-      width: 11px;
-      height: 11px;
-      flex-shrink: 0;
-    }
-
-    header h1 {
-      font-size: 2.25rem;
+    .hero h1 {
+      font-size: 3rem;
       font-weight: 800;
+      letter-spacing: -0.045em;
+      line-height: 1.08;
       color: var(--navy);
-      margin-bottom: 14px;
-      letter-spacing: -0.04em;
-      line-height: 1.15;
+      margin: 22px 0 18px;
     }
 
-    header p {
+    .hero h1 .accent {
+      background: linear-gradient(120deg, var(--green-dark), var(--green));
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+    }
+
+    .hero-sub {
       color: var(--muted);
-      font-size: 1rem;
-      max-width: 440px;
-      margin: 0 auto;
-      line-height: 1.65;
+      font-size: 1.08rem;
+      line-height: 1.7;
+      max-width: 480px;
+      margin-bottom: 26px;
     }
 
-    /* ── Card ── */
-    .card {
+    .hero-benefits {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 13px;
+      margin-bottom: 34px;
+    }
+
+    .hero-benefits li {
+      display: flex;
+      align-items: flex-start;
+      gap: 11px;
+      font-size: 0.98rem;
+      font-weight: 500;
+      color: #374151;
+      line-height: 1.5;
+    }
+
+    .benefit-check {
+      width: 21px;
+      height: 21px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, var(--green), var(--green-dark));
+      box-shadow: 0 2px 8px rgba(16,185,129,0.35);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      margin-top: 1px;
+    }
+
+    .benefit-check svg { width: 11px; height: 11px; color: #fff; }
+
+    .hero-actions {
+      display: flex;
+      align-items: center;
+      gap: 18px;
+      flex-wrap: wrap;
+    }
+
+    .hero-actions .btn-primary { padding: 15px 30px; font-size: 1rem; }
+
+    .hero-login {
+      color: var(--muted);
+      font-size: 0.9rem;
+      text-decoration: none;
+      font-weight: 500;
+    }
+
+    .hero-login strong { color: var(--green-dark); font-weight: 700; }
+    .hero-login:hover strong { text-decoration: underline; }
+
+    /* Hero preview card */
+    .hero-visual { position: relative; }
+
+    .preview-card {
       background: var(--card-bg);
-      border-radius: 16px;
-      padding: 32px;
-      box-shadow: 0 1px 4px rgba(0,0,0,0.05), 0 8px 28px rgba(15,23,42,0.08);
       border: 1px solid var(--border);
+      border-radius: 18px;
+      padding: 26px;
+      box-shadow: var(--shadow-card-hover);
+      transform: rotate(1.2deg);
+      transition: transform 0.3s ease;
     }
 
-    .card-label {
-      font-size: 0.72rem;
+    .preview-card:hover { transform: rotate(0deg); }
+
+    .preview-title {
+      font-size: 0.7rem;
       font-weight: 700;
       text-transform: uppercase;
       letter-spacing: 0.08em;
       color: var(--subtle);
+      margin-bottom: 18px;
+    }
+
+    .preview-stat-row { display: flex; gap: 14px; margin-bottom: 20px; }
+
+    .preview-stat {
+      flex: 1;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 14px;
+    }
+
+    .preview-stat .lbl { font-size: 0.68rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: var(--subtle); margin-bottom: 5px; }
+    .preview-stat .val { font-size: 1.35rem; font-weight: 800; letter-spacing: -0.03em; color: var(--navy); }
+    .preview-stat.bad { border-color: var(--red-border); background: #fffafa; }
+    .preview-stat.bad .val { color: var(--red); }
+
+    .preview-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 10px 2px;
+      border-bottom: 1px solid #f1f5f9;
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: var(--navy-3);
+    }
+
+    .preview-row:last-child { border-bottom: none; }
+    .preview-row .tag { font-size: 0.68rem; font-weight: 700; padding: 3px 9px; border-radius: 20px; }
+    .preview-row .tag.ok { background: var(--green-light); color: var(--green-dark); }
+    .preview-row .tag.no { background: var(--red-light); color: var(--red); }
+
+    /* ── Dashboard (logged in) ── */
+    .saved-banner {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      background: var(--green-light);
+      border: 1.5px solid var(--green-border);
+      color: var(--green-dark);
+      border-radius: 12px;
+      padding: 13px 18px;
+      font-size: 0.93rem;
+      font-weight: 600;
+      margin-bottom: 22px;
+    }
+
+    .saved-banner a {
+      margin-left: auto;
+      color: var(--green-dark);
+      font-weight: 700;
+      text-decoration: none;
+      white-space: nowrap;
+    }
+
+    .saved-banner a:hover { text-decoration: underline; }
+
+    .dash-head {
+      padding: 24px 28px;
+      margin-bottom: 22px;
+      background:
+        linear-gradient(135deg, rgba(16,185,129,0.05), transparent 45%),
+        var(--card-bg);
+    }
+
+    .dash-top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      flex-wrap: wrap;
       margin-bottom: 20px;
     }
 
-    /* ── Table layout ── */
+    .dash-user { display: flex; align-items: center; gap: 12px; min-width: 0; }
+
+    .dash-avatar {
+      width: 42px;
+      height: 42px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, var(--green), var(--green-dark));
+      color: #fff;
+      font-weight: 800;
+      font-size: 1.05rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      box-shadow: 0 3px 10px rgba(16,185,129,0.35);
+    }
+
+    .dash-hello { min-width: 0; }
+    .dash-hello .hi { font-size: 0.78rem; color: var(--subtle); font-weight: 600; }
+    .dash-hello .em {
+      font-size: 0.95rem;
+      font-weight: 700;
+      color: var(--navy);
+      letter-spacing: -0.01em;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .dash-updated {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 0.78rem;
+      font-weight: 600;
+      color: var(--muted);
+      background: #f1f5f9;
+      border: 1px solid var(--border);
+      padding: 5px 12px;
+      border-radius: 20px;
+      white-space: nowrap;
+    }
+
+    .dash-updated svg { width: 12px; height: 12px; flex-shrink: 0; }
+
+    .dash-stats {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 14px;
+    }
+
+    .dash-stat {
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 15px 17px;
+      background: #fbfcfe;
+    }
+
+    .dash-stat .lbl {
+      font-size: 0.68rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.07em;
+      color: var(--subtle);
+      margin-bottom: 5px;
+    }
+
+    .dash-stat .val {
+      font-size: 1.45rem;
+      font-weight: 800;
+      letter-spacing: -0.03em;
+      color: var(--navy);
+      font-variant-numeric: tabular-nums;
+    }
+
+    .dash-stat .sub { font-size: 0.73rem; color: var(--subtle); font-weight: 500; margin-top: 3px; }
+    .dash-stat.waste { border-color: var(--red-border); background: #fffafa; }
+    .dash-stat.waste .val { color: var(--red); }
+
+    /* ── Audit form ── */
+    .form-card { padding: 30px 32px 28px; }
+
     .table-head {
       display: grid;
-      grid-template-columns: 1fr 170px 150px 40px;
+      grid-template-columns: 1fr 165px 150px 40px;
       gap: 12px;
       padding: 0 0 12px;
       border-bottom: 1.5px solid #f1f5f9;
@@ -196,16 +288,13 @@
 
     .row {
       display: grid;
-      grid-template-columns: 1fr 170px 150px 40px;
+      grid-template-columns: 1fr 165px 150px 40px;
       gap: 12px;
       align-items: center;
       margin-bottom: 10px;
-      animation: fadeIn 0.15s ease;
-    }
-
-    @keyframes fadeIn {
-      from { opacity: 0; transform: translateY(-4px); }
-      to   { opacity: 1; transform: translateY(0); }
+      border-radius: 10px;
+      animation: fadeUp 0.25s ease both;
+      transition: background 0.15s ease;
     }
 
     input[type="text"],
@@ -214,15 +303,19 @@
       width: 100%;
       padding: 10px 13px;
       border: 1.5px solid var(--border);
-      border-radius: 8px;
+      border-radius: 9px;
       font-size: 0.93rem;
       color: var(--text);
-      background: #fafafa;
-      transition: border-color 0.15s, box-shadow 0.15s, background 0.15s;
+      background: #fafbfc;
+      transition: border-color 0.18s ease, box-shadow 0.18s ease, background 0.18s ease;
       outline: none;
       appearance: none;
       -webkit-appearance: none;
     }
+
+    input[type="text"]:hover,
+    input[type="number"]:hover,
+    select:hover { border-color: #cbd5e1; }
 
     input[type="text"]:focus,
     input[type="number"]:focus,
@@ -232,9 +325,7 @@
       background: white;
     }
 
-    .cost-wrap {
-      position: relative;
-    }
+    .cost-wrap { position: relative; }
 
     .cost-wrap > span {
       position: absolute;
@@ -246,9 +337,7 @@
       pointer-events: none;
     }
 
-    .cost-wrap input {
-      padding-left: 24px;
-    }
+    .cost-wrap input { padding-left: 24px; }
 
     select {
       background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%2394a3b8' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
@@ -259,25 +348,30 @@
     }
 
     .remove-btn {
-      width: 36px;
-      height: 36px;
-      border: none;
-      background: #fff1f2;
+      width: 38px;
+      height: 38px;
+      border: 1px solid transparent;
+      background: var(--red-light);
       color: #f43f5e;
-      border-radius: 8px;
-      font-size: 1.1rem;
-      line-height: 1;
+      border-radius: 9px;
       cursor: pointer;
       display: flex;
       align-items: center;
       justify-content: center;
-      transition: background 0.15s;
+      transition: background 0.18s ease, border-color 0.18s ease, transform 0.12s ease;
       flex-shrink: 0;
     }
 
-    .remove-btn:hover { background: #ffe4e6; }
+    .remove-btn svg { width: 15px; height: 15px; }
 
-    /* ── Actions bar ── */
+    .remove-btn:hover {
+      background: #ffe4e6;
+      border-color: #fecdd3;
+      transform: scale(1.05);
+    }
+
+    .remove-btn:active { transform: scale(0.95); }
+
     .actions {
       display: flex;
       gap: 12px;
@@ -287,15 +381,15 @@
     }
 
     .btn-add {
-      padding: 10px 18px;
+      padding: 11px 18px;
       border: 1.5px dashed var(--green-border);
       background: transparent;
       color: var(--green-dark);
-      border-radius: 8px;
+      border-radius: 9px;
       font-size: 0.9rem;
       font-weight: 600;
       cursor: pointer;
-      transition: background 0.15s, border-color 0.15s;
+      transition: background 0.18s ease, border-color 0.18s ease;
     }
 
     .btn-add:hover {
@@ -303,33 +397,7 @@
       border-color: var(--green);
     }
 
-    .btn-submit {
-      margin-left: auto;
-      padding: 11px 24px;
-      background: var(--navy);
-      color: white;
-      border: none;
-      border-radius: 8px;
-      font-size: 0.95rem;
-      font-weight: 700;
-      cursor: pointer;
-      letter-spacing: -0.01em;
-      display: inline-flex;
-      align-items: center;
-      gap: 8px;
-      transition: background 0.15s, transform 0.1s;
-    }
-
-    .btn-submit:hover  { background: var(--navy-2); }
-    .btn-submit:active { transform: scale(0.98); }
-
-    .btn-dot {
-      width: 8px;
-      height: 8px;
-      background: var(--green);
-      border-radius: 50%;
-      flex-shrink: 0;
-    }
+    .btn-submit { margin-left: auto; }
 
     /* ── Trust strip ── */
     .trust {
@@ -350,33 +418,40 @@
       font-weight: 500;
     }
 
-    .trust-item svg {
-      width: 13px;
-      height: 13px;
-      color: var(--green);
-      flex-shrink: 0;
+    .trust-item svg { width: 13px; height: 13px; color: var(--green); flex-shrink: 0; }
+
+    /* ── Responsive ── */
+    @media (max-width: 900px) {
+      .hero {
+        grid-template-columns: 1fr;
+        gap: 44px;
+        padding: 56px 20px 56px;
+        text-align: center;
+      }
+      .hero-sub { margin-left: auto; margin-right: auto; }
+      .hero-benefits { align-items: center; }
+      .hero-benefits li { text-align: left; }
+      .hero-actions { justify-content: center; }
+      .hero-visual { max-width: 440px; margin: 0 auto; width: 100%; }
+      .hero h1 { font-size: 2.4rem; }
     }
 
-    /* ── Mobile ── */
-    @media (max-width: 420px) {
-      .navbar { padding: 0 16px; }
-      .nav-pill { display: none; }
+    @media (max-width: 620px) {
+      .dash-stats { grid-template-columns: 1fr; }
     }
 
     @media (max-width: 560px) {
-      .page { padding: 28px 12px 44px; }
+      .hero { padding: 40px 16px 44px; }
+      .hero h1 { font-size: 1.95rem; }
+      .hero-sub { font-size: 1rem; }
+      .hero-actions .btn-primary { width: 100%; }
+      .hero-login { width: 100%; }
 
-      header { margin-bottom: 28px; }
-      header h1 { font-size: 1.65rem; }
+      .dash-head { padding: 20px 16px; }
+      .form-card { padding: 20px 14px; }
 
-      .card { padding: 20px 14px; }
-
-      /* Hide column headers — labels are redundant once stacked */
       .table-head { display: none; }
 
-      /* Reflow each row: name full-width on row 1,
-         cost + select + ×-btn on row 2.
-         Use named areas to avoid auto-placement ambiguity. */
       .row {
         grid-template-columns: 1fr 1fr 44px;
         grid-template-rows: auto auto;
@@ -387,6 +462,7 @@
         margin-bottom: 0;
         padding: 12px 0;
         border-bottom: 1px solid #f1f5f9;
+        border-radius: 0;
       }
 
       .row:last-child { border-bottom: none; padding-bottom: 0; }
@@ -396,31 +472,16 @@
       .row > select             { grid-area: sel; }
       .row > .remove-btn        { grid-area: rm; }
 
-      /* Prevent iOS auto-zoom on inputs */
       input[type="text"],
       input[type="number"],
       select { font-size: 1rem; }
 
-      /* Bigger tap target for remove button */
       .remove-btn { width: 44px; height: 44px; }
 
-      /* Stack action buttons full-width */
       .actions { flex-direction: column; gap: 10px; margin-top: 16px; }
+      .btn-add { width: 100%; text-align: center; padding: 13px 18px; }
+      .btn-submit { width: 100%; margin-left: 0; }
 
-      .btn-add {
-        width: 100%;
-        text-align: center;
-        padding: 13px 18px;
-      }
-
-      .btn-submit {
-        width: 100%;
-        margin-left: 0;
-        justify-content: center;
-        padding: 13px 24px;
-      }
-
-      /* Stack trust items vertically */
       .trust {
         flex-direction: column;
         align-items: flex-start;
@@ -428,50 +489,124 @@
         padding: 0 4px;
         margin-top: 24px;
       }
+
+      .saved-banner { flex-wrap: wrap; }
+      .saved-banner a { margin-left: 0; }
     }
-  </style>
-</head>
-<body>
+{% endblock %}
 
-  <nav class="navbar">
-    <a href="/" class="brand">
-      <svg class="brand-icon" viewBox="0 0 36 36" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-        <rect width="36" height="36" rx="8" fill="#1e293b"/>
-        <rect x="8" y="10" width="13" height="2.2" rx="1.1" fill="#10b981"/>
-        <rect x="8" y="15" width="9" height="2.2" rx="1.1" fill="#10b981" fill-opacity="0.65"/>
-        <rect x="8" y="20" width="11" height="2.2" rx="1.1" fill="#10b981" fill-opacity="0.4"/>
-        <circle cx="24.5" cy="24.5" r="4.5" stroke="#10b981" stroke-width="2" fill="none"/>
-        <line x1="27.7" y1="27.7" x2="30.5" y2="30.5" stroke="#10b981" stroke-width="2" stroke-linecap="round"/>
-      </svg>
-      <span class="brand-name">Sub<span class="accent">Audit</span></span>
-    </a>
-    <div class="nav-right">
-      <a href="/changes" class="nav-link">Changes</a>
-      <a href="/pricing" class="nav-link">Pricing</a>
-      {% if current_user.is_authenticated %}
-      <span class="nav-email">{{ current_user.email }}</span>
-      <a href="/logout" class="nav-link">Log Out</a>
-      {% else %}
-      <div class="nav-pill">Free Tool</div>
-      {% endif %}
+{% block content %}
+  {% if not current_user.is_authenticated %}
+
+  <!-- ═══ Logged-out hero ═══ -->
+  <section class="hero">
+    <div>
+      <div class="hero-badge fade">
+        <svg viewBox="0 0 12 12" fill="none" aria-hidden="true">
+          <path d="M2 6l3 3 5-5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        Free Subscription Audit
+      </div>
+      <h1 class="fade d1">Stop Paying for Software <span class="accent">You Don't Use</span></h1>
+      <p class="hero-sub fade d2">
+        SubAudit gives small businesses a clear picture of every software subscription
+        they pay for — and shows exactly how much money is going to tools nobody touches.
+      </p>
+      <ul class="hero-benefits fade d2">
+        <li>
+          <span class="benefit-check"><svg viewBox="0 0 12 12" fill="none" aria-hidden="true"><path d="M2 6l3 3 5-5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+          See your total monthly and annual SaaS spend in under two minutes
+        </li>
+        <li>
+          <span class="benefit-check"><svg viewBox="0 0 12 12" fill="none" aria-hidden="true"><path d="M2 6l3 3 5-5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+          Instantly spot unused subscriptions quietly draining your budget
+        </li>
+        <li>
+          <span class="benefit-check"><svg viewBox="0 0 12 12" fill="none" aria-hidden="true"><path d="M2 6l3 3 5-5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+          Track every price change with a full subscription history
+        </li>
+      </ul>
+      <div class="hero-actions fade d3">
+        <a href="/signup" class="btn-primary">Start Your Free Audit &rarr;</a>
+        <a href="/login" class="hero-login">Already have an account? <strong>Log in</strong></a>
+      </div>
     </div>
-  </nav>
 
+    <div class="hero-visual fade d3">
+      <div class="preview-card">
+        <div class="preview-title">Your Audit Results</div>
+        <div class="preview-stat-row">
+          <div class="preview-stat">
+            <div class="lbl">Monthly Spend</div>
+            <div class="val">$1,284</div>
+          </div>
+          <div class="preview-stat bad">
+            <div class="lbl">Monthly Waste</div>
+            <div class="val">$312</div>
+          </div>
+        </div>
+        <div class="preview-row"><span>Slack</span><span class="tag ok">Active</span></div>
+        <div class="preview-row"><span>Figma</span><span class="tag ok">Active</span></div>
+        <div class="preview-row"><span>Old CRM Tool</span><span class="tag no">Not Used</span></div>
+        <div class="preview-row"><span>Unused Analytics</span><span class="tag no">Not Used</span></div>
+      </div>
+    </div>
+  </section>
+
+  {% else %}
+
+  <!-- ═══ Logged-in dashboard ═══ -->
   <div class="page">
     <div class="container">
 
-      <header>
-        <div class="hero-badge">
-          <svg viewBox="0 0 12 12" fill="none" aria-hidden="true">
-            <path d="M2 6l3 3 5-5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
-          </svg>
-          Subscription Audit Tool
-        </div>
-        <h1>Find &amp; Cut Hidden SaaS Waste</h1>
-        <p>Enter your software subscriptions to instantly see how much you're paying for tools you no longer use.</p>
-      </header>
+      {% if saved %}
+      <div class="saved-banner fade">
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+          <circle cx="8" cy="8" r="7" stroke="currentColor" stroke-width="1.6"/>
+          <path d="M5 8l2 2 4-4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        Subscriptions saved.
+        <a href="/results">View your results &rarr;</a>
+      </div>
+      {% endif %}
 
-      <div class="card">
+      <div class="card dash-head fade">
+        <div class="dash-top">
+          <div class="dash-user">
+            <div class="dash-avatar">{{ current_user.email[0]|upper }}</div>
+            <div class="dash-hello">
+              <div class="hi">Welcome back</div>
+              <div class="em">{{ current_user.email }}</div>
+            </div>
+          </div>
+          <span class="dash-updated">
+            <svg viewBox="0 0 12 12" fill="none" aria-hidden="true">
+              <circle cx="6" cy="6" r="5" stroke="currentColor" stroke-width="1.4"/>
+              <path d="M6 3.5V6l1.8 1.2" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/>
+            </svg>
+            {% if last_updated %}Last updated {{ last_updated }}{% else %}No audit yet{% endif %}
+          </span>
+        </div>
+        <div class="dash-stats">
+          <div class="dash-stat">
+            <div class="lbl">Total Monthly Spend</div>
+            <div class="val">${{ "%.2f"|format(total) }}</div>
+            <div class="sub">${{ "%.0f"|format(total * 12) }} per year</div>
+          </div>
+          <div class="dash-stat waste">
+            <div class="lbl">Monthly Waste</div>
+            <div class="val">${{ "%.2f"|format(waste) }}</div>
+            <div class="sub">${{ "%.0f"|format(waste * 12) }} wasted per year</div>
+          </div>
+          <div class="dash-stat">
+            <div class="lbl">Tracked Subscriptions</div>
+            <div class="val">{{ subscriptions|length }}</div>
+            <div class="sub">{% if subscriptions %}across your account{% else %}add your first below{% endif %}</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card form-card fade d1">
         <div class="card-label">Your Subscriptions</div>
         <form method="POST" action="/" id="audit-form">
           <div class="table-head">
@@ -485,15 +620,12 @@
 
           <div class="actions">
             <button type="button" class="btn-add" id="add-btn">+ Add Row</button>
-            <button type="submit" class="btn-submit">
-              <span class="btn-dot" aria-hidden="true"></span>
-              Calculate Waste &rarr;
-            </button>
+            <button type="submit" class="btn-primary btn-submit">Save &amp; Calculate Waste &rarr;</button>
           </div>
         </form>
       </div>
 
-      <div class="trust">
+      <div class="trust fade d2">
         <div class="trust-item">
           <svg viewBox="0 0 16 16" fill="none" aria-hidden="true">
             <path d="M8 1.5L2.5 4v4c0 3.1 2.3 5.9 5.5 6.5 3.2-.6 5.5-3.4 5.5-6.5V4L8 1.5z" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/>
@@ -519,8 +651,18 @@
     </div>
   </div>
 
+  {% endif %}
+{% endblock %}
+
+{% block scripts %}
+  {% if current_user.is_authenticated %}
   <script>
     const container = document.getElementById('rows');
+
+    const TRASH_SVG =
+      '<svg viewBox="0 0 16 16" fill="none" aria-hidden="true">' +
+      '<path d="M2.5 4h11M6.5 4V2.8c0-.4.3-.8.8-.8h1.4c.5 0 .8.4.8.8V4m2.7 0l-.6 9.1c0 .6-.5 1.1-1.1 1.1H5.5c-.6 0-1.1-.5-1.1-1.1L3.8 4" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/>' +
+      '<path d="M6.5 7v4M9.5 7v4" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>';
 
     function createRow(name, cost, using) {
       const n = name  || '';
@@ -536,9 +678,15 @@
           '<option value="yes"' + (u === 'yes' ? ' selected' : '') + '>Yes, using it</option>' +
           '<option value="no"'  + (u === 'no'  ? ' selected' : '') + '>No, not using</option>' +
         '</select>' +
-        '<button type="button" class="remove-btn" title="Remove row">&times;</button>';
+        '<button type="button" class="remove-btn" title="Delete subscription" aria-label="Delete subscription">' + TRASH_SVG + '</button>';
       row.querySelector('.remove-btn').addEventListener('click', function () {
-        if (container.querySelectorAll('.row').length > 1) row.remove();
+        if (container.querySelectorAll('.row').length > 1) {
+          row.remove();
+        } else {
+          row.querySelector('input[name="name"]').value = '';
+          row.querySelector('input[name="cost"]').value = '';
+          row.querySelector('select[name="using"]').value = 'yes';
+        }
       });
       return row;
     }
@@ -561,5 +709,5 @@
       container.appendChild(createRow());
     }
   </script>
-</body>
-</html>
+  {% endif %}
+{% endblock %}

@@ -1,4 +1,5 @@
 import os
+import secrets
 import requests
 from datetime import datetime, timedelta, timezone
 from flask import Flask, render_template, request, session, redirect, url_for, jsonify
@@ -8,7 +9,9 @@ from extensions import db, login_manager
 from email_utils import send_change_summary
 
 app = Flask(__name__)
-app.secret_key = os.environ.get('SECRET_KEY', 'saas-audit-dev-key-change-in-prod')
+# SECRET_KEY must be set in production. Locally, fall back to a random
+# per-process key (sessions reset on restart) rather than a hardcoded value.
+app.secret_key = os.environ.get('SECRET_KEY') or secrets.token_hex(32)
 
 database_url = os.environ.get('DATABASE_URL', '')
 # Railway (and Heroku) may supply postgres:// which SQLAlchemy 2.x requires as postgresql://
@@ -32,8 +35,13 @@ def load_user(user_id):
 
 
 @app.route('/', methods=['GET', 'POST'])
-@login_required
 def index():
+    # Logged-out visitors see the marketing hero instead of the audit form
+    if not current_user.is_authenticated:
+        if request.method == 'POST':
+            return redirect(url_for('login'))
+        return render_template('index.html', subscriptions=[])
+
     if request.method == 'POST':
         names = request.form.getlist('name')
         costs = request.form.getlist('cost')
@@ -89,23 +97,40 @@ def index():
                 ))
 
         # Remove subscriptions the user deleted from the form
+        # (delete their history rows first to satisfy the FK constraint)
+        removed_q = models.Subscription.query.filter(
+            models.Subscription.user_id == current_user.id
+        )
         if submitted_names:
+            removed_q = removed_q.filter(~models.Subscription.name.in_(submitted_names))
+        removed_ids = [s.id for s in removed_q.all()]
+        if removed_ids:
+            models.SubscriptionHistory.query.filter(
+                models.SubscriptionHistory.subscription_id.in_(removed_ids)
+            ).delete(synchronize_session=False)
             models.Subscription.query.filter(
-                models.Subscription.user_id == current_user.id,
-                ~models.Subscription.name.in_(submitted_names),
-            ).delete(synchronize_session='fetch')
-        else:
-            models.Subscription.query.filter_by(user_id=current_user.id).delete()
+                models.Subscription.id.in_(removed_ids)
+            ).delete(synchronize_session=False)
 
         db.session.commit()
-        return redirect(url_for('results'))
+        return redirect(url_for('index', saved=1))
 
     db_subs = current_user.subscriptions.order_by(models.Subscription.created_at).all()
     subs_data = [
         {'name': s.name, 'cost': float(s.monthly_cost), 'using': 'yes' if s.is_active else 'no'}
         for s in db_subs
     ]
-    return render_template('index.html', subscriptions=subs_data)
+    total = sum(float(s.monthly_cost) for s in db_subs)
+    waste = sum(float(s.monthly_cost) for s in db_subs if not s.is_active)
+    last_updated = max((s.updated_at for s in db_subs), default=None)
+    return render_template(
+        'index.html',
+        subscriptions=subs_data,
+        total=total,
+        waste=waste,
+        last_updated=last_updated.strftime('%b %d, %Y') if last_updated else None,
+        saved='saved' in request.args,
+    )
 
 
 @app.route('/results')
@@ -152,17 +177,30 @@ def changes():
         sub_name = h.subscription.name
         date_str = h.changed_at.strftime('%b %d, %Y')
         if h.changed_field == 'created':
-            entries.append(f'{sub_name} added at ${float(h.new_value):.2f}/mo on {date_str}')
+            entries.append({
+                'kind': 'added', 'date': date_str, 'name': sub_name,
+                'text': f'added at ${float(h.new_value):.2f}/mo',
+            })
         elif h.changed_field == 'monthly_cost':
             old = float(h.old_value)
             new = float(h.new_value)
+            kind = 'increase' if new > old else 'decrease'
             direction = 'increased' if new > old else 'decreased'
-            entries.append(f'{sub_name} price {direction} from ${old:.2f} to ${new:.2f} on {date_str}')
+            entries.append({
+                'kind': kind, 'date': date_str, 'name': sub_name,
+                'text': f'price {direction} from ${old:.2f} to ${new:.2f}',
+            })
         elif h.changed_field == 'is_active':
             if h.new_value == 'False':
-                entries.append(f'{sub_name} marked as no longer in use on {date_str}')
+                entries.append({
+                    'kind': 'paused', 'date': date_str, 'name': sub_name,
+                    'text': 'marked as no longer in use',
+                })
             else:
-                entries.append(f'{sub_name} marked as in use again on {date_str}')
+                entries.append({
+                    'kind': 'resumed', 'date': date_str, 'name': sub_name,
+                    'text': 'marked as in use again',
+                })
     return render_template('changes.html', entries=entries)
 
 
