@@ -9,6 +9,8 @@ class User(UserMixin, db.Model):
     id = db.Column(db.Integer, primary_key=True)
     email = db.Column(db.String(255), unique=True, nullable=False)
     password_hash = db.Column(db.String(255), nullable=False)
+    verified = db.Column(db.Boolean, default=False, nullable=False)
+    email_verification_token = db.Column(db.String(64), index=True)
     created_at = db.Column(db.DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), nullable=False)
 
     subscriptions = db.relationship('Subscription', back_populates='user', lazy='dynamic')

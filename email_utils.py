@@ -23,6 +23,87 @@ def _format_entry(h):
     return None
 
 
+def send_verification_email(user_email, token):
+    """Send an email-verification link. Returns (ok: bool, error: str|None)."""
+    api_key = os.environ.get('SENDGRID_API_KEY', '')
+    if not api_key:
+        return False, 'SENDGRID_API_KEY is not set'
+
+    verify_url = f'https://subaudit.io/verify/{token}'
+
+    html = f"""<!DOCTYPE html>
+<html lang="en">
+<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>
+<body style="margin:0;padding:0;background:#f8fafc;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;">
+  <table width="100%" cellpadding="0" cellspacing="0" style="background:#f8fafc;padding:40px 20px;">
+    <tr><td align="center">
+      <table width="100%" style="max-width:560px;background:#ffffff;border-radius:16px;border:1px solid #e2e8f0;box-shadow:0 1px 4px rgba(0,0,0,0.05);">
+        <tr>
+          <td style="background:#0f172a;border-radius:16px 16px 0 0;padding:24px 32px;">
+            <span style="font-size:1.2rem;font-weight:800;color:#ffffff;letter-spacing:-0.03em;">
+              Sub<span style="color:#10b981;">Audit</span>
+            </span>
+          </td>
+        </tr>
+        <tr>
+          <td style="padding:32px;">
+            <h1 style="font-size:1.3rem;font-weight:800;color:#0f172a;margin:0 0 8px;letter-spacing:-0.02em;">
+              Confirm your email address
+            </h1>
+            <p style="font-size:14px;color:#64748b;margin:0 0 28px;">
+              Thanks for signing up for SubAudit. Click the button below to verify your
+              email address and activate your account.
+            </p>
+            <table cellpadding="0" cellspacing="0" style="margin:0 0 28px;">
+              <tr>
+                <td style="border-radius:10px;background:#10b981;">
+                  <a href="{verify_url}"
+                     style="display:inline-block;padding:13px 28px;font-size:15px;font-weight:700;color:#ffffff;text-decoration:none;border-radius:10px;">
+                    Verify My Email &rarr;
+                  </a>
+                </td>
+              </tr>
+            </table>
+            <p style="font-size:13px;color:#94a3b8;margin:0 0 8px;">
+              Or copy and paste this link into your browser:
+            </p>
+            <p style="font-size:13px;margin:0 0 28px;word-break:break-all;">
+              <a href="{verify_url}" style="color:#059669;">{verify_url}</a>
+            </p>
+            <p style="font-size:13px;color:#94a3b8;margin:0;">
+              If you didn't create a SubAudit account, you can safely ignore this email.
+            </p>
+          </td>
+        </tr>
+      </table>
+    </td></tr>
+  </table>
+</body>
+</html>"""
+
+    text = (
+        'Thanks for signing up for SubAudit!\n\n'
+        'Confirm your email address by visiting this link:\n'
+        f'{verify_url}\n\n'
+        "If you didn't create a SubAudit account, you can safely ignore this email."
+    )
+
+    message = Mail(
+        from_email=FROM_EMAIL,
+        to_emails=user_email,
+        subject='Confirm your email address — SubAudit',
+        html_content=html,
+        plain_text_content=text,
+    )
+
+    try:
+        sg = SendGridAPIClient(api_key)
+        sg.send(message)
+        return True, None
+    except Exception as exc:
+        return False, str(exc)
+
+
 def send_change_summary(user_email, history_entries):
     """Send a subscription change summary email. Returns (ok: bool, error: str|None)."""
     api_key = os.environ.get('SENDGRID_API_KEY', '')

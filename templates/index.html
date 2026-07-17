@@ -1,7 +1,7 @@
 {% extends 'base.html' %}
 {% set active_page = 'dashboard' %}
 
-{% block title %}SubAudit — Stop Paying for Software You Don't Use{% endblock %}
+{% block title %}SubAudit — Stop Paying for Subscriptions You Don't Use{% endblock %}
 
 {% block style %}
     /* ── Hero (logged out) ── */
@@ -507,15 +507,16 @@
         </svg>
         Free Subscription Audit
       </div>
-      <h1 class="fade d1">Stop Paying for Software <span class="accent">You Don't Use</span></h1>
+      <h1 class="fade d1">Stop Paying for Subscriptions <span class="accent">You Don't Use</span></h1>
       <p class="hero-sub fade d2">
-        SubAudit gives small businesses a clear picture of every software subscription
-        they pay for — and shows exactly how much money is going to tools nobody touches.
+        SubAudit gives small businesses a clear picture of every recurring expense they
+        pay for — software, insurance, memberships, services — and shows exactly how
+        much money is going to subscriptions nobody uses.
       </p>
       <ul class="hero-benefits fade d2">
         <li>
           <span class="benefit-check"><svg viewBox="0 0 12 12" fill="none" aria-hidden="true"><path d="M2 6l3 3 5-5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
-          See your total monthly and annual SaaS spend in under two minutes
+          See your total monthly and annual subscription spend in under two minutes
         </li>
         <li>
           <span class="benefit-check"><svg viewBox="0 0 12 12" fill="none" aria-hidden="true"><path d="M2 6l3 3 5-5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
@@ -546,9 +547,9 @@
           </div>
         </div>
         <div class="preview-row"><span>Slack</span><span class="tag ok">Active</span></div>
-        <div class="preview-row"><span>Figma</span><span class="tag ok">Active</span></div>
+        <div class="preview-row"><span>Business Insurance</span><span class="tag ok">Active</span></div>
         <div class="preview-row"><span>Old CRM Tool</span><span class="tag no">Not Used</span></div>
-        <div class="preview-row"><span>Unused Analytics</span><span class="tag no">Not Used</span></div>
+        <div class="preview-row"><span>Gym Membership</span><span class="tag no">Not Used</span></div>
       </div>
     </div>
   </section>
@@ -610,7 +611,7 @@
         <div class="card-label">Your Subscriptions</div>
         <form method="POST" action="/" id="audit-form">
           <div class="table-head">
-            <span>Service Name</span>
+            <span>Subscription Name</span>
             <span>Monthly Cost</span>
             <span>Still Using?</span>
             <span></span>
@@ -671,7 +672,7 @@
       const row = document.createElement('div');
       row.className = 'row';
       row.innerHTML =
-        '<input type="text" name="name" placeholder="e.g. Slack, Figma, Zoom" value="' + escAttr(n) + '" autocomplete="off">' +
+        '<input type="text" name="name" placeholder="e.g. Netflix, gym membership, insurance" value="' + escAttr(n) + '" autocomplete="off">' +
         '<div class="cost-wrap"><span>$</span>' +
         '<input type="number" name="cost" min="0" step="0.01" placeholder="0.00" value="' + escAttr(c) + '"></div>' +
         '<select name="using">' +

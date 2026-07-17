@@ -5,8 +5,9 @@ from datetime import datetime, timedelta, timezone
 from flask import Flask, render_template, request, session, redirect, url_for, jsonify
 from flask_login import login_user, logout_user, login_required, current_user
 from werkzeug.security import generate_password_hash, check_password_hash
+from sqlalchemy import inspect, text
 from extensions import db, login_manager
-from email_utils import send_change_summary
+from email_utils import send_change_summary, send_verification_email
 
 app = Flask(__name__)
 # SECRET_KEY must be set in production. Locally, fall back to a random
@@ -27,6 +28,17 @@ import models  # noqa: E402 — registers models with SQLAlchemy metadata
 
 with app.app_context():
     db.create_all()
+    # create_all() only creates missing tables — add new columns to an
+    # existing users table by hand.
+    existing_cols = {c['name'] for c in inspect(db.engine).get_columns('users')}
+    with db.engine.begin() as conn:
+        if 'verified' not in existing_cols:
+            conn.execute(text('ALTER TABLE users ADD COLUMN verified BOOLEAN NOT NULL DEFAULT FALSE'))
+            # Grandfather in accounts that existed before verification —
+            # they have no token, so they could never log in otherwise.
+            conn.execute(text('UPDATE users SET verified = TRUE'))
+        if 'email_verification_token' not in existing_cols:
+            conn.execute(text('ALTER TABLE users ADD COLUMN email_verification_token VARCHAR(64)'))
 
 
 @login_manager.user_loader
@@ -275,11 +287,19 @@ def signup():
         elif models.User.query.filter_by(email=email).first():
             error = 'An account with that email already exists.'
         else:
-            user = models.User(email=email, password_hash=generate_password_hash(password))
+            token = secrets.token_urlsafe(32)
+            user = models.User(
+                email=email,
+                password_hash=generate_password_hash(password),
+                email_verification_token=token,
+            )
             db.session.add(user)
             db.session.commit()
-            login_user(user)
-            return redirect(url_for('index'))
+            ok, send_error = send_verification_email(email, token)
+            if not ok:
+                app.logger.error('Verification email to %s failed: %s', email, send_error)
+                return redirect(url_for('login', registered=1, email_failed=1))
+            return redirect(url_for('login', registered=1))
     return render_template('signup.html', error=error)
 
 
@@ -288,16 +308,77 @@ def login():
     if current_user.is_authenticated:
         return redirect(url_for('index'))
     error = None
+    notice = None
+    show_resend = False
+    resend_email = ''
+    if 'registered' in request.args:
+        notice = ('Account created! Please check your email to verify your '
+                  'account before logging in.')
+        if 'email_failed' in request.args:
+            notice = ('Account created, but we could not send the verification '
+                      'email. Please contact support.')
+    elif 'verified' in request.args:
+        notice = 'Email verified! You can now log in.'
+    elif 'invalid_token' in request.args:
+        error = 'That verification link is invalid or has already been used.'
     if request.method == 'POST':
+        notice = None
         email = request.form.get('email', '').strip().lower()
         password = request.form.get('password', '')
         user = models.User.query.filter_by(email=email).first()
         if not user or not check_password_hash(user.password_hash, password):
             error = 'Invalid email or password.'
+        elif not user.verified:
+            error = 'Please verify your email before logging in. Check your inbox.'
+            show_resend = True
+            resend_email = email
         else:
             login_user(user)
             return redirect(url_for('index'))
-    return render_template('login.html', error=error)
+    return render_template('login.html', error=error, notice=notice,
+                           show_resend=show_resend, resend_email=resend_email)
+
+
+@app.route('/resend-verification', methods=['GET', 'POST'])
+def resend_verification():
+    if current_user.is_authenticated:
+        return redirect(url_for('index'))
+    error = None
+    notice = None
+    email = request.args.get('email', '').strip().lower()
+    if request.method == 'POST':
+        email = request.form.get('email', '').strip().lower()
+        if not email:
+            error = 'Email is required.'
+        else:
+            user = models.User.query.filter_by(email=email).first()
+            if user and user.verified:
+                notice = 'That email is already verified — you can log in.'
+            elif user:
+                token = secrets.token_urlsafe(32)
+                user.email_verification_token = token
+                db.session.commit()
+                ok, send_error = send_verification_email(email, token)
+                if ok:
+                    notice = 'Verification email sent! Check your inbox.'
+                else:
+                    app.logger.error('Resend verification to %s failed: %s', email, send_error)
+                    error = 'We could not send the email right now. Please try again later.'
+            else:
+                # Don't reveal whether an account exists
+                notice = 'Verification email sent! Check your inbox.'
+    return render_template('resend.html', error=error, notice=notice, email=email)
+
+
+@app.route('/verify/<token>')
+def verify_email(token):
+    user = models.User.query.filter_by(email_verification_token=token).first()
+    if not user:
+        return redirect(url_for('login', invalid_token=1))
+    user.verified = True
+    user.email_verification_token = None
+    db.session.commit()
+    return redirect(url_for('login', verified=1))
 
 
 @app.route('/logout')
