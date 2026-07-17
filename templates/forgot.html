@@ -1,6 +1,6 @@
 {% extends 'base.html' %}
 
-{% block title %}Resend Verification — SubAudit{% endblock %}
+{% block title %}Forgot Password — SubAudit{% endblock %}
 
 {% block style %}
     .auth-page {
@@ -108,8 +108,8 @@
     <div class="auth-wrap">
 
       <div class="auth-header fade">
-        <h1>Resend verification email</h1>
-        <p>Enter your email address and we'll send you a new verification link.</p>
+        <h1>Forgot your password?</h1>
+        <p>Enter your email address and we'll send you a link to reset it.</p>
       </div>
 
       <div class="card auth-card fade d1">
@@ -120,13 +120,13 @@
         <div class="error-box">{{ error }}</div>
         {% endif %}
 
-        <form method="POST" action="/resend-verification">
+        <form method="POST" action="/forgot-password">
           <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
           <div class="field">
             <label for="email">Email address</label>
-            <input type="email" id="email" name="email" placeholder="you@company.com" autocomplete="email" value="{{ email }}" required>
+            <input type="email" id="email" name="email" placeholder="you@company.com" autocomplete="email" required>
           </div>
-          <button type="submit" class="btn-primary btn-submit">Resend Verification Email &rarr;</button>
+          <button type="submit" class="btn-primary btn-submit">Send Reset Link &rarr;</button>
         </form>
       </div>
 

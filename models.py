@@ -11,6 +11,8 @@ class User(UserMixin, db.Model):
     password_hash = db.Column(db.String(255), nullable=False)
     verified = db.Column(db.Boolean, default=False, nullable=False)
     email_verification_token = db.Column(db.String(64), index=True)
+    password_reset_token = db.Column(db.String(64), index=True)
+    password_reset_expires = db.Column(db.DateTime(timezone=True))
     created_at = db.Column(db.DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), nullable=False)
 
     subscriptions = db.relationship('Subscription', back_populates='user', lazy='dynamic')

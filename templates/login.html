@@ -89,6 +89,20 @@
       text-decoration: underline;
     }
 
+    .forgot-row {
+      text-align: right;
+      margin-top: 7px;
+    }
+
+    .forgot-row a {
+      font-size: 0.82rem;
+      font-weight: 600;
+      color: var(--green-dark);
+      text-decoration: none;
+    }
+
+    .forgot-row a:hover { text-decoration: underline; }
+
     .btn-submit { width: 100%; margin-top: 4px; }
 
     .auth-footer {
@@ -135,6 +149,7 @@
         {% endif %}
 
         <form method="POST" action="/login">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
           <div class="field">
             <label for="email">Email address</label>
             <input type="email" id="email" name="email" placeholder="you@company.com" autocomplete="email" required>
@@ -142,6 +157,7 @@
           <div class="field">
             <label for="password">Password</label>
             <input type="password" id="password" name="password" placeholder="••••••••" autocomplete="current-password" required>
+            <div class="forgot-row"><a href="/forgot-password">Forgot password?</a></div>
           </div>
           <button type="submit" class="btn-primary btn-submit">Log In &rarr;</button>
         </form>

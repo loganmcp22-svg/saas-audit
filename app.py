@@ -1,18 +1,25 @@
+import math
 import os
+import re
 import secrets
 import requests
 from datetime import datetime, timedelta, timezone
 from flask import Flask, render_template, request, session, redirect, url_for, jsonify
 from flask_login import login_user, logout_user, login_required, current_user
+from flask_wtf.csrf import CSRFProtect, CSRFError
 from werkzeug.security import generate_password_hash, check_password_hash
 from sqlalchemy import inspect, text
 from extensions import db, login_manager
-from email_utils import send_change_summary, send_verification_email
+from email_utils import send_change_summary, send_verification_email, send_password_reset_email
 
 app = Flask(__name__)
 # SECRET_KEY must be set in production. Locally, fall back to a random
 # per-process key (sessions reset on restart) rather than a hardcoded value.
 app.secret_key = os.environ.get('SECRET_KEY') or secrets.token_hex(32)
+app.config['WTF_CSRF_SECRET_KEY'] = os.environ.get('WTF_CSRF_SECRET_KEY') or app.secret_key
+app.config['WTF_CSRF_TIME_LIMIT'] = None  # token valid for the whole session
+
+csrf = CSRFProtect(app)
 
 database_url = os.environ.get('DATABASE_URL', '')
 # Railway (and Heroku) may supply postgres:// which SQLAlchemy 2.x requires as postgresql://
@@ -39,11 +46,45 @@ with app.app_context():
             conn.execute(text('UPDATE users SET verified = TRUE'))
         if 'email_verification_token' not in existing_cols:
             conn.execute(text('ALTER TABLE users ADD COLUMN email_verification_token VARCHAR(64)'))
+        if 'password_reset_token' not in existing_cols:
+            conn.execute(text('ALTER TABLE users ADD COLUMN password_reset_token VARCHAR(64)'))
+        if 'password_reset_expires' not in existing_cols:
+            conn.execute(text('ALTER TABLE users ADD COLUMN password_reset_expires TIMESTAMP'))
 
 
 @login_manager.user_loader
 def load_user(user_id):
     return models.User.query.get(int(user_id))
+
+
+@app.errorhandler(CSRFError)
+def handle_csrf_error(e):
+    # fetch() callers expect JSON; browser form posts get a plain message
+    if request.path == '/send-test-email' or request.accept_mimetypes.best == 'application/json':
+        return jsonify({'error': 'Your session expired. Refresh the page and try again.'}), 400
+    return 'Your session expired. Please go back, refresh the page, and try again.', 400
+
+
+# Subscription input limits (server-side; the form also enforces these client-side)
+NAME_MAX_LENGTH = 100
+COST_MAX = 99999
+TAG_RE = re.compile(r'<[^>]*>')
+
+
+def clean_subscription_name(raw):
+    """Strip HTML tags and whitespace, cap length. Returns '' if nothing is left."""
+    return TAG_RE.sub('', raw).strip()[:NAME_MAX_LENGTH]
+
+
+def parse_cost(raw):
+    """Parse a monthly cost, coercing anything invalid (nan/inf/negative/too large) to 0.0."""
+    try:
+        cost = float(raw)
+    except (ValueError, TypeError):
+        return 0.0
+    if not math.isfinite(cost) or cost < 0 or cost > COST_MAX:
+        return 0.0
+    return cost
 
 
 @app.route('/', methods=['GET', 'POST'])
@@ -61,13 +102,10 @@ def index():
 
         submitted_names = set()
         for name, cost_str, using in zip(names, costs, usings):
-            name = name.strip()
+            name = clean_subscription_name(name)
             if not name:
                 continue
-            try:
-                cost = float(cost_str)
-            except (ValueError, TypeError):
-                cost = 0.0
+            cost = parse_cost(cost_str)
             submitted_names.add(name)
 
             existing = models.Subscription.query.filter_by(
@@ -233,6 +271,7 @@ def send_test_email():
 
 
 @app.route('/cron/send-monthly-emails', methods=['POST'])
+@csrf.exempt
 def cron_send_monthly_emails():
     secret = os.environ.get('CRON_SECRET', '')
     if not secret or request.headers.get('X-Cron-Secret') != secret:
@@ -321,6 +360,10 @@ def login():
         notice = 'Email verified! You can now log in.'
     elif 'invalid_token' in request.args:
         error = 'That verification link is invalid or has already been used.'
+    elif 'reset' in request.args:
+        notice = 'Password updated! You can now log in with your new password.'
+    elif 'reset_invalid' in request.args:
+        error = 'That password reset link is invalid or has expired. Please request a new one.'
     if request.method == 'POST':
         notice = None
         email = request.form.get('email', '').strip().lower()
@@ -370,6 +413,72 @@ def resend_verification():
     return render_template('resend.html', error=error, notice=notice, email=email)
 
 
+@app.route('/forgot-password', methods=['GET', 'POST'])
+def forgot_password():
+    if current_user.is_authenticated:
+        return redirect(url_for('index'))
+    error = None
+    notice = None
+    if request.method == 'POST':
+        email = request.form.get('email', '').strip().lower()
+        if not email:
+            error = 'Email is required.'
+        else:
+            user = models.User.query.filter_by(email=email).first()
+            if user:
+                token = secrets.token_urlsafe(32)
+                user.password_reset_token = token
+                user.password_reset_expires = datetime.now(timezone.utc) + timedelta(hours=1)
+                db.session.commit()
+                ok, send_error = send_password_reset_email(email, token)
+                if not ok:
+                    app.logger.error('Password reset email to %s failed: %s', email, send_error)
+            # Same message whether or not the account exists — don't reveal it,
+            # even when the send fails.
+            notice = ('If an account exists for that email, we\'ve sent a link '
+                      'to reset your password. Check your inbox.')
+    return render_template('forgot.html', error=error, notice=notice)
+
+
+def _user_for_reset_token(token):
+    """Return the user for a reset token, or None if unknown/expired."""
+    user = models.User.query.filter_by(password_reset_token=token).first()
+    if not user or not user.password_reset_expires:
+        return None
+    expires = user.password_reset_expires
+    # SQLite drops tzinfo on the way back out; stored values are always UTC
+    if expires.tzinfo is None:
+        expires = expires.replace(tzinfo=timezone.utc)
+    if expires < datetime.now(timezone.utc):
+        return None
+    return user
+
+
+@app.route('/reset-password/<token>', methods=['GET', 'POST'])
+def reset_password(token):
+    if current_user.is_authenticated:
+        return redirect(url_for('index'))
+    user = _user_for_reset_token(token)
+    if not user:
+        return redirect(url_for('login', reset_invalid=1))
+
+    error = None
+    if request.method == 'POST':
+        password = request.form.get('password', '')
+        confirm = request.form.get('confirm', '')
+        if len(password) < 8:
+            error = 'Password must be at least 8 characters.'
+        elif password != confirm:
+            error = 'Passwords do not match.'
+        else:
+            user.password_hash = generate_password_hash(password)
+            user.password_reset_token = None
+            user.password_reset_expires = None
+            db.session.commit()
+            return redirect(url_for('login', reset=1))
+    return render_template('reset.html', error=error, token=token)
+
+
 @app.route('/verify/<token>')
 def verify_email(token):
     user = models.User.query.filter_by(email_verification_token=token).first()
@@ -389,6 +498,7 @@ def logout():
 
 
 @app.route('/api/waitlist', methods=['POST'])
+@csrf.exempt
 def waitlist():
     data = request.get_json()
     email = (data or {}).get('email', '').strip()

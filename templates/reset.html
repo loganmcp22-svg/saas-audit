@@ -1,6 +1,6 @@
 {% extends 'base.html' %}
 
-{% block title %}Resend Verification — SubAudit{% endblock %}
+{% block title %}Reset Password — SubAudit{% endblock %}
 
 {% block style %}
     .auth-page {
@@ -38,7 +38,7 @@
       letter-spacing: -0.01em;
     }
 
-    input[type="email"] {
+    input[type="password"] {
       width: 100%;
       padding: 11px 13px;
       border: 1.5px solid var(--border);
@@ -50,9 +50,9 @@
       outline: none;
     }
 
-    input[type="email"]:hover { border-color: #cbd5e1; }
+    input[type="password"]:hover { border-color: #cbd5e1; }
 
-    input[type="email"]:focus {
+    input[type="password"]:focus {
       border-color: var(--green);
       box-shadow: 0 0 0 3px var(--green-ring);
       background: white;
@@ -62,17 +62,6 @@
       background: #fff1f2;
       border: 1px solid #fecdd3;
       color: #be123c;
-      border-radius: 9px;
-      padding: 10px 14px;
-      font-size: 0.875rem;
-      font-weight: 500;
-      margin-bottom: 20px;
-    }
-
-    .notice-box {
-      background: #ecfdf5;
-      border: 1px solid #a7f3d0;
-      color: #047857;
       border-radius: 9px;
       padding: 10px 14px;
       font-size: 0.875rem;
@@ -108,25 +97,26 @@
     <div class="auth-wrap">
 
       <div class="auth-header fade">
-        <h1>Resend verification email</h1>
-        <p>Enter your email address and we'll send you a new verification link.</p>
+        <h1>Choose a new password</h1>
+        <p>Enter a new password for your SubAudit account.</p>
       </div>
 
       <div class="card auth-card fade d1">
-        {% if notice %}
-        <div class="notice-box">{{ notice }}</div>
-        {% endif %}
         {% if error %}
         <div class="error-box">{{ error }}</div>
         {% endif %}
 
-        <form method="POST" action="/resend-verification">
+        <form method="POST" action="{{ url_for('reset_password', token=token) }}">
           <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
           <div class="field">
-            <label for="email">Email address</label>
-            <input type="email" id="email" name="email" placeholder="you@company.com" autocomplete="email" value="{{ email }}" required>
+            <label for="password">New password</label>
+            <input type="password" id="password" name="password" placeholder="••••••••" autocomplete="new-password" required minlength="8">
           </div>
-          <button type="submit" class="btn-primary btn-submit">Resend Verification Email &rarr;</button>
+          <div class="field">
+            <label for="confirm">Confirm new password</label>
+            <input type="password" id="confirm" name="confirm" placeholder="••••••••" autocomplete="new-password" required minlength="8">
+          </div>
+          <button type="submit" class="btn-primary btn-submit">Update Password &rarr;</button>
         </form>
       </div>
 

@@ -133,6 +133,7 @@
         {% endif %}
 
         <form method="POST" action="/signup" id="signupForm" novalidate>
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
           <div class="field">
             <label for="email">Email address</label>
             <input type="email" id="email" name="email" placeholder="you@company.com" autocomplete="email" required>

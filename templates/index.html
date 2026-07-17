@@ -610,6 +610,7 @@
       <div class="card form-card fade d1">
         <div class="card-label">Your Subscriptions</div>
         <form method="POST" action="/" id="audit-form">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
           <div class="table-head">
             <span>Subscription Name</span>
             <span>Monthly Cost</span>
@@ -672,9 +673,9 @@
       const row = document.createElement('div');
       row.className = 'row';
       row.innerHTML =
-        '<input type="text" name="name" placeholder="e.g. Netflix, gym membership, insurance" value="' + escAttr(n) + '" autocomplete="off">' +
+        '<input type="text" name="name" maxlength="100" placeholder="e.g. Netflix, gym membership, insurance" value="' + escAttr(n) + '" autocomplete="off">' +
         '<div class="cost-wrap"><span>$</span>' +
-        '<input type="number" name="cost" min="0" step="0.01" placeholder="0.00" value="' + escAttr(c) + '"></div>' +
+        '<input type="number" name="cost" min="0" max="99999" step="0.01" placeholder="0.00" value="' + escAttr(c) + '"></div>' +
         '<select name="using">' +
           '<option value="yes"' + (u === 'yes' ? ' selected' : '') + '>Yes, using it</option>' +
           '<option value="no"'  + (u === 'no'  ? ' selected' : '') + '>No, not using</option>' +

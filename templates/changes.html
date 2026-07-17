@@ -235,7 +235,10 @@
       status.className = 'email-status';
 
       try {
-        const res = await fetch('/send-test-email', { method: 'POST' });
+        const res = await fetch('/send-test-email', {
+          method: 'POST',
+          headers: { 'X-CSRFToken': '{{ csrf_token() }}' },
+        });
         const data = await res.json();
         if (res.ok && data.ok) {
           status.textContent = 'Email sent! Check your inbox at {{ current_user.email }}.';
