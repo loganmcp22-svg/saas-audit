@@ -4,6 +4,8 @@
 {% block title %}SubAudit — Stop Paying for Subscriptions You Don't Use{% endblock %}
 
 {% block style %}
+    html { scroll-behavior: smooth; }
+
     /* ── Hero (logged out) ── */
     .hero {
       max-width: 1060px;
@@ -493,6 +495,117 @@
       .saved-banner { flex-wrap: wrap; }
       .saved-banner a { margin-left: 0; }
     }
+
+    /* ── Anonymous try-it section ── */
+    .try-section {
+      max-width: 780px;
+      margin: 0 auto;
+      padding: 0 20px 80px;
+      scroll-margin-top: 80px;
+    }
+
+    .try-head { text-align: center; margin-bottom: 26px; }
+
+    .try-head h2 {
+      font-size: 1.7rem;
+      font-weight: 800;
+      letter-spacing: -0.03em;
+      color: var(--navy);
+      margin-bottom: 8px;
+    }
+
+    .try-head p { color: var(--muted); font-size: 0.98rem; }
+
+    .anon-empty-msg {
+      color: var(--red);
+      font-size: 0.88rem;
+      font-weight: 600;
+      margin-top: 12px;
+    }
+
+    .anon-results {
+      margin-top: 22px;
+      padding: 38px 28px 34px;
+      text-align: center;
+      border-color: var(--red-border);
+      background:
+        radial-gradient(500px 220px at 50% -40%, rgba(220,38,38,0.07), transparent 70%),
+        var(--card-bg);
+    }
+
+    .anon-results.clean {
+      border-color: var(--green-border);
+      background:
+        radial-gradient(500px 220px at 50% -40%, rgba(16,185,129,0.09), transparent 70%),
+        var(--card-bg);
+    }
+
+    .anon-kicker {
+      font-size: 0.76rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: var(--subtle);
+      margin-bottom: 10px;
+    }
+
+    .anon-waste {
+      font-size: 3.6rem;
+      font-weight: 800;
+      letter-spacing: -0.05em;
+      line-height: 1;
+      color: var(--red);
+      font-variant-numeric: tabular-nums;
+    }
+
+    .anon-waste .per { font-size: 1.3rem; font-weight: 700; color: #f87171; }
+    .anon-results.clean .anon-waste { color: var(--green-dark); }
+    .anon-results.clean .anon-waste .per { color: var(--green); }
+
+    .anon-summary {
+      font-size: 1rem;
+      color: var(--muted);
+      max-width: 420px;
+      margin: 12px auto 24px;
+      line-height: 1.6;
+    }
+
+    .anon-stats {
+      display: flex;
+      justify-content: center;
+      gap: 28px;
+      flex-wrap: wrap;
+      margin-bottom: 28px;
+    }
+
+    .anon-stats .lbl {
+      display: block;
+      font-size: 0.68rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.07em;
+      color: var(--subtle);
+      margin-bottom: 3px;
+    }
+
+    .anon-stats .val {
+      font-size: 1.25rem;
+      font-weight: 800;
+      color: var(--navy);
+      font-variant-numeric: tabular-nums;
+    }
+
+    .anon-stats .val.bad { color: var(--red); }
+    .anon-results.clean .anon-stats .val.bad { color: var(--green-dark); }
+
+    .anon-note { font-size: 0.8rem; color: var(--subtle); margin-top: 12px; }
+
+    @media (max-width: 560px) {
+      .try-head h2 { font-size: 1.4rem; }
+      .anon-waste { font-size: 2.8rem; }
+      .anon-results { padding: 28px 16px 26px; }
+      .anon-stats { gap: 18px; }
+    }
 {% endblock %}
 
 {% block content %}
@@ -528,7 +641,7 @@
         </li>
       </ul>
       <div class="hero-actions fade d3">
-        <a href="/signup" class="btn-primary">Start Your Free Audit &rarr;</a>
+        <a href="#try" class="btn-primary">Start Your Free Audit &rarr;</a>
         <a href="/login" class="hero-login">Already have an account? <strong>Log in</strong></a>
       </div>
     </div>
@@ -554,6 +667,43 @@
     </div>
   </section>
 
+  <!-- ═══ Anonymous try-it audit ═══ -->
+  <section class="try-section" id="try">
+    <div class="try-head fade">
+      <h2>Try it right now — no account needed</h2>
+      <p>List what you pay for, mark what you actually use, and see the damage instantly.</p>
+    </div>
+
+    <div class="card form-card fade d1">
+      <div class="card-label">Your Subscriptions</div>
+      <div class="table-head">
+        <span>Subscription Name</span>
+        <span>Monthly Cost</span>
+        <span>Still Using?</span>
+        <span></span>
+      </div>
+      <div id="anon-rows"></div>
+      <div class="actions">
+        <button type="button" class="btn-add" id="anon-add-btn">+ Add Row</button>
+        <button type="button" class="btn-primary btn-submit" id="anon-calc-btn">Calculate My Waste &rarr;</button>
+      </div>
+      <p class="anon-empty-msg" id="anon-empty-msg" hidden>Add at least one subscription first.</p>
+    </div>
+
+    <div class="card anon-results" id="anon-results" hidden>
+      <div class="anon-kicker">Your Monthly Waste</div>
+      <div class="anon-waste" id="anon-waste">$0<span class="per">/mo</span></div>
+      <p class="anon-summary" id="anon-summary"></p>
+      <div class="anon-stats">
+        <div><span class="lbl">Total Monthly</span><span class="val" id="anon-total"></span></div>
+        <div><span class="lbl">Total Per Year</span><span class="val" id="anon-annual"></span></div>
+        <div><span class="lbl">Wasted Per Year</span><span class="val bad" id="anon-waste-year"></span></div>
+      </div>
+      <button type="button" class="btn-primary" id="anon-save-btn">Save My Audit — Free &rarr;</button>
+      <p class="anon-note">Free account &middot; keeps your audit &amp; tracks price changes &middot; no card required</p>
+    </div>
+  </section>
+
   {% else %}
 
   <!-- ═══ Logged-in dashboard ═══ -->
@@ -570,6 +720,14 @@
         <a href="/results">View your results &rarr;</a>
       </div>
       {% endif %}
+
+      <div class="saved-banner fade" id="carried-banner" hidden>
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+          <circle cx="8" cy="8" r="7" stroke="currentColor" stroke-width="1.6"/>
+          <path d="M5 8l2 2 4-4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        Your audit came with you — hit &ldquo;Save &amp; Calculate Waste&rdquo; to keep it.
+      </div>
 
       <div class="card dash-head fade">
         <div class="dash-top">
@@ -657,16 +815,17 @@
 {% endblock %}
 
 {% block scripts %}
-  {% if current_user.is_authenticated %}
   <script>
-    const container = document.getElementById('rows');
-
     const TRASH_SVG =
       '<svg viewBox="0 0 16 16" fill="none" aria-hidden="true">' +
       '<path d="M2.5 4h11M6.5 4V2.8c0-.4.3-.8.8-.8h1.4c.5 0 .8.4.8.8V4m2.7 0l-.6 9.1c0 .6-.5 1.1-1.1 1.1H5.5c-.6 0-1.1-.5-1.1-1.1L3.8 4" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/>' +
       '<path d="M6.5 7v4M9.5 7v4" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>';
 
-    function createRow(name, cost, using) {
+    function escAttr(s) {
+      return String(s).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;');
+    }
+
+    function createRow(container, name, cost, using) {
       const n = name  || '';
       const c = cost  || '';
       const u = using || 'yes';
@@ -693,23 +852,107 @@
       return row;
     }
 
-    function escAttr(s) {
-      return String(s).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;');
+    function readRows(container) {
+      const rows = [];
+      container.querySelectorAll('.row').forEach(function (row) {
+        const name = row.querySelector('input[name="name"]').value.trim();
+        if (!name) return;
+        rows.push({
+          name: name,
+          cost: parseFloat(row.querySelector('input[name="cost"]').value) || 0,
+          using: row.querySelector('select[name="using"]').value,
+        });
+      });
+      return rows;
     }
+  </script>
+
+  {% if current_user.is_authenticated %}
+  <script>
+    const container = document.getElementById('rows');
 
     document.getElementById('add-btn').addEventListener('click', function () {
-      const row = createRow();
+      const row = createRow(container);
       container.appendChild(row);
       row.querySelector('input[name="name"]').focus();
     });
 
-    // Seed from saved subscriptions, or one blank row for new users
+    // Seed rows: saved subscriptions first, then an audit carried over from
+    // the landing page, then one blank row for brand-new users.
     const saved = {{ subscriptions | tojson }};
+    const pending = sessionStorage.getItem('subaudit_pending');
     if (saved.length > 0) {
-      saved.forEach(function (s) { container.appendChild(createRow(s.name, s.cost, s.using)); });
+      saved.forEach(function (s) { container.appendChild(createRow(container, s.name, s.cost, s.using)); });
+    } else if (pending) {
+      let rows = [];
+      try { rows = JSON.parse(pending); } catch (e) {}
+      if (rows.length > 0) {
+        rows.forEach(function (s) { container.appendChild(createRow(container, s.name, s.cost, s.using)); });
+        document.getElementById('carried-banner').hidden = false;
+      } else {
+        container.appendChild(createRow(container));
+      }
     } else {
-      container.appendChild(createRow());
+      container.appendChild(createRow(container));
     }
+    sessionStorage.removeItem('subaudit_pending');
+  </script>
+  {% else %}
+  <script>
+    const anonContainer = document.getElementById('anon-rows');
+    for (let i = 0; i < 3; i++) anonContainer.appendChild(createRow(anonContainer));
+
+    let auditStarted = false;
+    anonContainer.addEventListener('input', function () {
+      if (!auditStarted) {
+        auditStarted = true;
+        plausible('Audit Started');
+      }
+    });
+
+    document.getElementById('anon-add-btn').addEventListener('click', function () {
+      const row = createRow(anonContainer);
+      anonContainer.appendChild(row);
+      row.querySelector('input[name="name"]').focus();
+    });
+
+    const resultsCard = document.getElementById('anon-results');
+    const emptyMsg = document.getElementById('anon-empty-msg');
+
+    document.getElementById('anon-calc-btn').addEventListener('click', function () {
+      const rows = readRows(anonContainer);
+      if (rows.length === 0) {
+        emptyMsg.hidden = false;
+        anonContainer.querySelector('input[name="name"]').focus();
+        return;
+      }
+      emptyMsg.hidden = true;
+
+      const total = rows.reduce(function (sum, r) { return sum + r.cost; }, 0);
+      const wasted = rows.filter(function (r) { return r.using === 'no'; });
+      const waste = wasted.reduce(function (sum, r) { return sum + r.cost; }, 0);
+
+      document.getElementById('anon-waste').innerHTML =
+        '$' + Math.round(waste) + '<span class="per">/mo</span>';
+      document.getElementById('anon-total').textContent = '$' + total.toFixed(2);
+      document.getElementById('anon-annual').textContent = '$' + Math.round(total * 12);
+      document.getElementById('anon-waste-year').textContent = '$' + Math.round(waste * 12);
+      resultsCard.classList.toggle('clean', waste === 0);
+      document.getElementById('anon-summary').textContent = waste > 0
+        ? "That's $" + Math.round(waste * 12) + ' a year going to ' + wasted.length +
+          ' subscription' + (wasted.length === 1 ? '' : 's') + " you're not using."
+        : 'No waste detected — everything you listed is in use. Save your audit to catch future price creep.';
+
+      resultsCard.hidden = false;
+      resultsCard.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      plausible('Audit Calculated', { props: { subscriptions: rows.length } });
+    });
+
+    document.getElementById('anon-save-btn').addEventListener('click', function () {
+      sessionStorage.setItem('subaudit_pending', JSON.stringify(readRows(anonContainer)));
+      plausible('Audit Save Clicked');
+      window.location.href = '/signup';
+    });
   </script>
   {% endif %}
 {% endblock %}

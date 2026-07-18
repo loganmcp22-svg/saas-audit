@@ -140,12 +140,7 @@
         <div class="notice-box">{{ notice }}</div>
         {% endif %}
         {% if error %}
-        <div class="error-box">
-          {{ error }}
-          {% if show_resend %}
-          <a href="{{ url_for('resend_verification', email=resend_email) }}">Resend verification email</a>
-          {% endif %}
-        </div>
+        <div class="error-box">{{ error }}</div>
         {% endif %}
 
         <form method="POST" action="/login">

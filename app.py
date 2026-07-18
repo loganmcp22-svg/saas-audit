@@ -163,6 +163,9 @@ def index():
             ).delete(synchronize_session=False)
 
         db.session.commit()
+        # Deliver the payoff directly instead of bouncing back to the form
+        if models.Subscription.query.filter_by(user_id=current_user.id).count():
+            return redirect(url_for('results'))
         return redirect(url_for('index', saved=1))
 
     db_subs = current_user.subscriptions.order_by(models.Subscription.created_at).all()
@@ -337,8 +340,10 @@ def signup():
             ok, send_error = send_verification_email(email, token)
             if not ok:
                 app.logger.error('Verification email to %s failed: %s', email, send_error)
-                return redirect(url_for('login', registered=1, email_failed=1))
-            return redirect(url_for('login', registered=1))
+            # Log the user straight in — verification gates email features
+            # (via the banner), not the product itself.
+            login_user(user)
+            return redirect(url_for('index'))
     return render_template('signup.html', error=error)
 
 
@@ -348,15 +353,7 @@ def login():
         return redirect(url_for('index'))
     error = None
     notice = None
-    show_resend = False
-    resend_email = ''
-    if 'registered' in request.args:
-        notice = ('Account created! Please check your email to verify your '
-                  'account before logging in.')
-        if 'email_failed' in request.args:
-            notice = ('Account created, but we could not send the verification '
-                      'email. Please contact support.')
-    elif 'verified' in request.args:
+    if 'verified' in request.args:
         notice = 'Email verified! You can now log in.'
     elif 'invalid_token' in request.args:
         error = 'That verification link is invalid or has already been used.'
@@ -371,15 +368,10 @@ def login():
         user = models.User.query.filter_by(email=email).first()
         if not user or not check_password_hash(user.password_hash, password):
             error = 'Invalid email or password.'
-        elif not user.verified:
-            error = 'Please verify your email before logging in. Check your inbox.'
-            show_resend = True
-            resend_email = email
         else:
             login_user(user)
             return redirect(url_for('index'))
-    return render_template('login.html', error=error, notice=notice,
-                           show_resend=show_resend, resend_email=resend_email)
+    return render_template('login.html', error=error, notice=notice)
 
 
 @app.route('/resend-verification', methods=['GET', 'POST'])
@@ -483,11 +475,30 @@ def reset_password(token):
 def verify_email(token):
     user = models.User.query.filter_by(email_verification_token=token).first()
     if not user:
+        if current_user.is_authenticated:
+            return redirect(url_for('index'))
         return redirect(url_for('login', invalid_token=1))
     user.verified = True
     user.email_verification_token = None
     db.session.commit()
+    if current_user.is_authenticated:
+        return redirect(url_for('index'))
     return redirect(url_for('login', verified=1))
+
+
+@app.route('/resend-my-verification', methods=['POST'])
+@login_required
+def resend_my_verification():
+    """Resend the verification email for the logged-in user (banner button)."""
+    if not current_user.verified:
+        token = secrets.token_urlsafe(32)
+        current_user.email_verification_token = token
+        db.session.commit()
+        ok, send_error = send_verification_email(current_user.email, token)
+        if not ok:
+            app.logger.error('Resend verification to %s failed: %s',
+                             current_user.email, send_error)
+    return redirect(request.referrer or url_for('index'))
 
 
 @app.route('/logout')
